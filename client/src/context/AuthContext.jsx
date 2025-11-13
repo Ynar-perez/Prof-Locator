@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
       }
     }
-  }, []); // Empty array means this runs only once on mount
+  }, []); // runs only once
 
   // Function to log the user in
   const login = (token) => {
