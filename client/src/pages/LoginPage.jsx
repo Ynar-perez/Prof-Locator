@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 
+import { Toaster, toast } from 'sonner'
+
 // Image import
 import profIcon from '../assets/proflocatorLogo.jpg';
 
@@ -33,7 +35,7 @@ const LoginPage = () => {
       login(token);
     } catch (err) {
       console.error(err.response ? err.response.data : err.message);
-      setError(err.response?.data?.msg || 'Login failed. Check your details.');
+      toast.error(err.response?.data?.msg || 'Login failed. Check your details.');
     }
   };
 
@@ -43,6 +45,7 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
+      <Toaster position="top-center" richColors />
 
       {/* Right Side - Login Form Section */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-8 md:p-12 bg-gray-50">
@@ -61,13 +64,6 @@ const LoginPage = () => {
             <div className="mb-1 flex justify-center">
               <img className='h-40 w-40' src={profIcon} alt="Proflocator Icon" />
             </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
-              </div>
-            )}
 
             {/* Login Form */}
             <form onSubmit={onSubmit} className="space-y-6">
@@ -128,7 +124,7 @@ const LoginPage = () => {
               </div>
 
               {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between text-sm">
+              {/* <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
@@ -136,10 +132,10 @@ const LoginPage = () => {
                   />
                   <span className="ml-2 text-gray-600">Remember me</span>
                 </label>
-                {/* <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
+                <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
                   Forgot password?
-                </a> */}
-              </div>
+                </a>
+              </div> */}
 
               {/* Submit Button */}
               <button
