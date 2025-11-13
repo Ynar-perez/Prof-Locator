@@ -1,0 +1,7 @@
+.vscode
+
+# This ignores all node_modules folders
+node_modules
+
+# This ignores your secret .env file
+.env
