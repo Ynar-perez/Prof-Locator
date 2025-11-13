@@ -51,7 +51,7 @@ const LoginPage = () => {
 
   // If not authenticated, show the login form
   return (
-    <div className="login-container">
+    <div className="login-container text-amber-300">
       <h2>PROFLOCATOR Login</h2>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={onSubmit}>
