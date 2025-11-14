@@ -40,7 +40,7 @@ const userSchema = new Schema({
   },
 
   // --- Fields for INSTRUCTOR Only ---
-  status: {
+  instructorStatus: {
     type: String,
     enum: ['Available', 'In Class', 'In Meeting', 'Busy', 'Away', 'Unavailable'],
     default: 'Unavailable' // Good default for new instructors
