@@ -7,6 +7,21 @@ const jwt = require('jsonwebtoken');
 const { auth, isAdmin } = require('../middleware/authMiddleware');
 
 // -----------------------------------------------------------------
+// 💡 @route   GET /api/users (READ - Admin Only)
+// 💡 @desc    Get all users
+// 💡 @access  Private (Admin)
+// -----------------------------------------------------------------
+router.get('/', [auth, isAdmin], async (req, res) => {
+  try {
+    const users = await User.find().select('-password').sort({ name: 1 });
+    res.status(200).json(users);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// -----------------------------------------------------------------
 // 💡 @route   POST /api/users/register (CREATE - Admin Only)
 // 💡 @access  Private (Admin)
 // -----------------------------------------------------------------
@@ -77,7 +92,7 @@ router.post('/login', async (req, res) => {
     // 7. Sign and send the token back
     jwt.sign(
       payload,
-      'process.env.JWT_SECRET',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' },
       (err, token) => {
         if (err) throw err;

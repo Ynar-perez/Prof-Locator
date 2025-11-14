@@ -33,6 +33,7 @@ const LoginPage = () => {
       const res = await axios.post('/api/users/login', { email, password });
       const { token } = res.data;
       login(token);
+      toast.success('Logged in successfully.');
     } catch (err) {
       console.error(err.response ? err.response.data : err.message);
       toast.error(err.response?.data?.msg || 'Login failed. Check your details.');
@@ -45,7 +46,6 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      <Toaster position="top-center" richColors />
 
       {/* Right Side - Login Form Section */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-8 md:p-12 bg-gray-50">

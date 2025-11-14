@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Add useEffect & useCallback
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { 
   CalendarSync,
@@ -16,6 +17,9 @@ import {
   Calendar, UserCheck, UserX, Bell, Settings
 } from 'lucide-react';
 
+import ConfirmationDialog from '../components/shared/ConfirmationDialog';
+import { toast } from 'sonner';
+
 import StatsCard from '../components/admin/StatsCard';
 import ScheduleModal from '../components/admin/ScheduleModal';
 import AddUserModal from '../components/admin/AddUserModal';
@@ -30,45 +34,157 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+
+  const [allUsers, setAllUsers] = useState([]); // This will hold our real data
+  const [isLoading, setIsLoading] = useState(true); // For a loading spinner
+  const [error, setError] = useState(null); // To show API errors
+
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+
+  const initiateDelete = (user) => {
+    setUserToDelete({ id: user._id, name: user.name }); 
+    setShowDeleteAlert(true);
+  };
+
+  const getAuthHeaders = useCallback(() => {
+    const token = user.token;
+    if (!token) {
+      logout(); // or handle expired token
+      return {};
+    }
+    return {
+      headers: {
+        'x-auth-token': token,
+      },
+    };
+  }, [user.token, logout]);
+
+  // 💡 --- FETCH USERS FUNCTION ---
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await axios.get('/api/users', getAuthHeaders());
+      setAllUsers(res.data);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      setError('Failed to fetch users. Please refresh.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [getAuthHeaders]); // Re-run if auth headers change
+
+  // 💡 --- LOAD DATA ON MOUNT ---
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]); // Run this function when the component loads
+
+  // 💡 --- DERIVE STATS FROM LIVE DATA ---
+  const instructorCount = allUsers.filter(u => u.role === 'INSTRUCTOR').length;
+  const studentCount = allUsers.filter(u => u.role === 'STUDENT').length;
+
+  const stats = [
+    { title: 'Total Instructors', value: instructorCount, icon: GraduationCap, color: 'bg-blue-500' },
+    { title: 'Active Students', value: studentCount, icon: Users, color: 'bg-violet-500' },
+  ];
+
   const handleCloseModal = () => {
     setShowScheduleModal(false);
     setSelectedUser(null);
   };
 
-  const handleAddUserSubmit = (formData) => {
-    console.log('User data submitted:', formData);
-    // Place your API call or data manipulation logic here
+  // 💡 --- UPDATE 'ADD USER' FUNCTION ---
+  const handleAddUserSubmit = async (formData) => {
+    console.log('Adding new user:', formData);
+    try {
+      // formData should be { name, email, password, role }
+      const res = await axios.post('/api/users/register', formData, getAuthHeaders());
+      console.log('User created:', res.data);
+      
+      // Add new user to our state to refresh the list instantly
+      setAllUsers([...allUsers, res.data.user]);
+      setShowAddUserModal(false); // Close the modal
+      
+    } catch (err) {
+      console.error("Error adding user:", err.response?.data?.msg || err.message);
+      // You should add an error state to your AddUserModal to show this
+    }
   };
 
-  // Mock data
-  const stats = [
-    { title: 'Total Instructors', value: '24', icon: GraduationCap, color: 'bg-blue-500' },
-    { title: 'Active Students', value: '156', icon: Users, color: 'bg-violet-500' },
-  ];
+  const confirmDeleteUser = async () => {
+    // Use the destructured values for clarity
+    const { id: userId, name } = userToDelete || {}; 
+  
+    if (!userId) return;
+    
+    try {
+      // Use userId for the API call
+      await axios.delete(`/api/users/${userId}`, getAuthHeaders());
+      setAllUsers(prevUsers => prevUsers.filter(u => u._id !== userId));
+      
+      // Use the stored 'name' in the toast message
+      toast.success(`User ${name} deleted successfully.`);
+      
+    } catch (err) {
+      console.error("Error deleting user:", err.response?.data?.msg || err.message);
+      setError('Failed to delete user.');
+      
+      toast.error(err.response?.data?.msg || `Failed to delete user ${name}.`, {
+        description: 'Please check the network connection or permissions.',
+      });
+      
+    } finally {
+      // Clear the stored user object
+      setUserToDelete(null); 
+      setShowDeleteAlert(false);
+    }
+  };
 
-  const users = [
-    { id: 1, name: 'John Smith', email: 'john@example.com', role: 'Instructor', status: 'Active', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' },
-    { id: 2, name: 'Sarah Johnson', email: 'sarah@example.com', role: 'Student', status: 'Active', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' },
-    { id: 3, name: 'Mike Chen', email: 'mike@example.com', role: 'Instructor', status: 'Active', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' },
-    { id: 4, name: 'Emily Davis', email: 'emily@example.com', role: 'Student', status: 'Pending', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100' },
-    { id: 5, name: 'David Wilson', email: 'david@example.com', role: 'Instructor', status: 'Inactive', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100' },
-  ];
-
-  const filteredUsers = users.filter(u => 
-    (activeTab === 'instructors' ? u.role === 'Instructor' : u.role === 'Student') &&
+  // 💡 --- UPDATE FILTERED USERS ---
+  const filteredUsers = allUsers.filter(u => 
+    (activeTab === 'instructors' ? u.role === 'INSTRUCTOR' : u.role === 'STUDENT') &&
     (u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-     u.email.toLowerCase().includes(searchQuery.toLowerCase()))
+    u.email.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const StatusBadge = ({ status }) => {
-    const colors = {
-      Active: 'bg-green-100 text-green-700',
-      Pending: 'bg-yellow-100 text-yellow-700',
-      Inactive: 'bg-gray-100 text-gray-700'
-    };
+  const StatusBadge = ({ user }) => {
+    // Default to a "general" status
+    let statusText = 'Active';
+    let color = 'bg-green-100 text-green-700';
+
+    // If the user is an INSTRUCTOR, use their specific status
+    if (user.role === 'INSTRUCTOR') {
+      statusText = user.instructorStatus || 'Unavailable'; // Use instructorStatus
+      
+      switch (statusText) {
+        case 'Available':
+          color = 'bg-green-100 text-green-700';
+          break;
+        case 'In Class':
+        case 'In Meeting':
+        case 'Busy':
+          color = 'bg-yellow-100 text-yellow-700';
+          break;
+        case 'Away':
+          color = 'bg-blue-100 text-blue-700';
+          break;
+        case 'Unavailable':
+        default:
+          color = 'bg-gray-100 text-gray-700';
+          break;
+      }
+    } else {
+      // For STUDENT or ADMIN, we'll just show 'Active'
+      // since they don't have a special status.
+      // You can change this to 'N/A' if you prefer.
+      statusText = 'Active'; 
+      color = 'bg-green-100 text-green-700';
+    }
+
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status]}`}>
-        {status}
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
+        {statusText}
       </span>
     );
   };
@@ -201,7 +317,7 @@ const AdminDashboard = () => {
           {/* User Management Section */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="p-4 md:p-6 border-b border-gray-200">
-              <div className="flex flex-col md:flex-row sm:flex-row sm:items-center sm:justify-between md:just md:items-center md:justify-between gap-4">
+              <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-800">User Management</h2>
                 <button 
                   onClick={() => setShowAddUserModal(true)}
@@ -262,71 +378,106 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full" />
-                          <div>
-                            <p className="font-medium text-gray-900">{user.name}</p>
-                            <p className="text-sm text-gray-500">{user.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">#{user.id}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{user.role}</td>
-                      <td className="px-6 py-4">
-                        <StatusBadge status={user.status} />
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {user.role === 'Instructor' && (
-                            <button
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setShowScheduleModal(true);
-                              }}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                            >
-                              <Calendar className="w-4 h-4" />
-                            </button>
-                          )}
-                          <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {/* 💡 Add loading and error checks */}
+
+                  {isLoading ? (
+  <tr>
+    <td colSpan="5" className="p-6 text-center">Loading users...</td>
+  </tr>
+                    ) : error ? (
+                      <tr>
+                        <td colSpan="5" className="p-6 text-center text-red-500">{error}</td>
+                      </tr>
+                    ) : (
+                      filteredUsers.map((user) => (
+                        <tr key={user.id} className="hover:bg-gray-50 transition">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              {/* Placeholder avatar */}
+                              <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
+                                {user.name.charAt(0)}
+                              </span>
+                              <div>
+                                <p className="font-medium text-gray-900">{user.name}</p>
+                                <p className="text-sm text-gray-500">{user.email}</p>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-4 text-sm text-gray-500">#{user._id}</td>
+
+                          <td className="px-6 py-4 text-sm text-gray-900">{user.role}</td>
+
+                          <td className="px-6 py-4">
+                            <StatusBadge user={user} />
+                          </td>
+
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {user.role === "INSTRUCTOR" && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setShowScheduleModal(true);
+                                  }}
+                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                >
+                                  <Calendar className="w-4 h-4" />
+                                </button>
+                              )}
+
+                              <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                  onClick={() => initiateDelete(user)} // <-- Change the function name here
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                              >
+                                  <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+
                 </tbody>
               </table>
             </div>
 
             {/* Cards - Mobile/Tablet */}
             <div className="md:hidden p-4 space-y-4">
-              {filteredUsers.map((user) => (
+            {isLoading ? (
+                <p className="text-center">Loading users...</p>
+              ) : error ? (
+                <p className="text-center text-red-500">{error}</p>
+              ) : (
+                filteredUsers.map((user) => (
                 <div key={user.id} className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full" />
+                      <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
+                        {user.name.charAt(0)}
+                      </span>
+                      {/* <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full" /> */}
                       <div>
                         <p className="font-medium text-gray-900">{user.name}</p>
                         <p className="text-sm text-gray-500">{user.email}</p>
                       </div>
                     </div>
-                    <StatusBadge status={user.status} />
+                    <StatusBadge user={user} />
                   </div>
                   
                   <div className="flex items-center justify-between text-sm mb-3">
-                    <span className="text-gray-500">ID: #{user.id}</span>
+                    <span className="text-gray-500">ID: #{user._id}</span>
                     <span className="font-medium text-gray-700">{user.role}</span>
+                    {/* <span className="text-gray-500">ID: #{user.id}</span>
+                    <span className="font-medium text-gray-700">{user.role}</span> */}
                   </div>
 
                   <div className="flex gap-2">
-                    {user.role === 'Instructor' && (
+                    {user.role === 'INSTRUCTOR' && (
                       <button
                         onClick={() => {
                           setSelectedUser(user);
@@ -340,12 +491,15 @@ const AdminDashboard = () => {
                     <button className="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
                       Edit
                     </button>
-                    <button className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">
+                    <button 
+                    onClick={() => initiateDelete(user)}
+                    className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -353,54 +507,9 @@ const AdminDashboard = () => {
 
       {/* Add User Modal */}
       {showAddUserModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/70">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-gray-800">Add New User</h3>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input type="text" className="w-full px- py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input type="email" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                  <option>Instructor</option>
-                  <option>Student</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex gap-3">
-              <button
-                onClick={() => setShowAddUserModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-              >
-                Cancel
-              </button>
-              <button className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-lg hover:from-blue-700 hover:to-violet-700 transition">
-                Add User
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add User Modal */}
-      {showAddUserModal && (
         <AddUserModal
-          // PROP 1: Function to close the modal
           onClose={() => setShowAddUserModal(false)}
-          // PROP 2: Function to handle form submission
-          onSubmit={handleAddUserSubmit}
+          onSubmit={handleAddUserSubmit} // 💡 This is now connected!
         />
       )}
 
@@ -423,6 +532,21 @@ const AdminDashboard = () => {
           onClick={() => setSidebarOpen(false)}
         />
       )}
+
+      <ConfirmationDialog
+        // State control props
+        open={showDeleteAlert}
+        onOpenChange={setShowDeleteAlert}
+        
+        // Confirmation action prop
+        onConfirm={confirmDeleteUser}
+        
+        // Content props
+        title="Confirm User Deletion"
+        description="This action cannot be undone. This will permanently delete the user account and remove their data from our servers."
+        continueText="Yes, Delete User"
+      />
+
     </div>
   );
 };
