@@ -7,6 +7,65 @@ const jwt = require("jsonwebtoken");
 const { auth, isAdmin } = require("../middleware/authMiddleware");
 
 // -----------------------------------------------------------------
+// Helper functions to calculate current instructor status/location
+// -----------------------------------------------------------------
+const getTodaysDay = () => {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return days[new Date().getDay()];
+};
+
+const getCurrentTime = () => {
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
+const calculateCurrentStatus = (instructor) => {
+  const now = new Date();
+
+  // 1. Check for an active override
+  // Does an override exist AND is it in the future?
+  if (instructor.statusOverrideExpires && instructor.statusOverrideExpires > now) {
+    return {
+      status: instructor.instructorStatus, // This is the override status
+      location: instructor.location, // Use the user's base location
+      room: instructor.room,         // Use the user's base room
+      overrideExpires: instructor.statusOverrideExpires,
+    };
+  }
+
+  // 2. No override. Check the base schedule.
+  const today = getTodaysDay();
+  const currentTime = getCurrentTime();
+
+  const currentScheduleItem = instructor.baseSchedule.find(item => {
+    return item.day === today && 
+           item.startTime <= currentTime && 
+           item.endTime > currentTime;
+  });
+
+  if (currentScheduleItem) {
+    // Found a matching item in the schedule
+    return {
+      status: currentScheduleItem.status,
+      location: currentScheduleItem.location,
+      room: currentScheduleItem.room,
+      overrideExpires: null,
+    };
+  }
+
+  // 3. No override and not in a scheduled class.
+  // Return a sensible default (e.g., "Available" at their main office)
+  return {
+    status: "Available", // Default status
+    location: instructor.location, // Default location
+    room: instructor.room,         // Default room
+    overrideExpires: null,
+  };
+};
+
+// -----------------------------------------------------------------
 // 💡 @route   GET /api/users (READ - Admin Only)
 // 💡 @desc    Get all users
 // 💡 @access  Private (Admin)
@@ -88,7 +147,8 @@ router.post("/login", async (req, res) => {
       user: {
         id: user.id,
         role: user.role,
-        name: user.name, // We can add name to the token too!
+        name: user.name,
+        email: user.email,
       },
     };
 
@@ -198,7 +258,16 @@ router.get("/instructors", auth, async (req, res) => {
       // 3. Sort them alphabetically by name
       .sort({ name: 1 });
 
-    res.status(200).json(instructors);
+    // 4. Calculate the current status/location for each instructor
+    const instructorsWithStatus = instructors.map(instructor => {
+      const currentStatus = calculateCurrentStatus(instructor);
+      return {
+        ...instructor.toObject(),
+        currentStatus,
+      };
+    });
+
+    res.status(200).json(instructorsWithStatus);
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");

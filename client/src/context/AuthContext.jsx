@@ -7,6 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState({
     token: null,
     name: null,
+    email: null,
     role: null,
     isAuthenticated: false,
   });
@@ -25,6 +26,7 @@ export const AuthProvider = ({ children }) => {
           setUser({
             token: token,
             name: decoded.user.name,
+            email: decoded.user.email,
             role: decoded.user.role,
             isAuthenticated: true,
           });
@@ -44,6 +46,7 @@ export const AuthProvider = ({ children }) => {
       setUser({
         token: token,
         name: decoded.user.name,
+        email: decoded.user.email,
         role: decoded.user.role,
         isAuthenticated: true,
       });
@@ -55,7 +58,7 @@ export const AuthProvider = ({ children }) => {
   // Function to log the user out
   const logout = () => {
     localStorage.removeItem('token');
-    setUser({ token: null, name: null, role: null, isAuthenticated: false });
+    setUser({ token: null, name: null, email: null, role: null, isAuthenticated: false });
   };
 
   const contextValue = {

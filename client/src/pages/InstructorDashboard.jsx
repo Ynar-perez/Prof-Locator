@@ -9,6 +9,20 @@ const getTodaysDay = () => {
   return days[new Date().getDay()];
 };
 
+// Helper function to get current schedule item based on time
+const getCurrentScheduleItem = (schedule = []) => {
+  const now = new Date();
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const todayName = getTodaysDay();
+  
+  const todaySchedule = schedule.filter(item => item.dayOfWeek === todayName);
+  const current = todaySchedule.find(item => {
+    return currentTime >= item.startTime && currentTime < item.endTime;
+  });
+  
+  return current || null;
+};
+
 // Helper function to get initials (e.g., "Sarah Johnson" -> "SJ")
 const getInitials = (name) => {
   if (!name) return '?';
@@ -275,9 +289,9 @@ const InstructorStatusDashboard = () => {
     );
   }
 
-  // Main Render
   const { profile, currentState } = dashboardData;
   const currentStyle = statusOptions.find(s => s.value === currentState.status) || statusOptions[0];
+  const currentScheduleItem = getCurrentScheduleItem(dashboardData.fullSchedule);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -363,11 +377,11 @@ const InstructorStatusDashboard = () => {
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 text-xs sm:text-sm w-full sm:w-auto">
                 <div className="flex items-center justify-center sm:justify-start text-white rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 px-3 py-2 shadow-sm">
                   <Building className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">{currentState.location || 'No location'}</span>
+                  <span className="truncate">{currentScheduleItem?.location || 'No location'}</span>
                 </div>
                 <div className="flex items-center justify-center sm:justify-start text-white rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 px-3 py-2 shadow-sm">
                   <DoorOpen className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">{currentState.room || 'No room'}</span>
+                  <span className="truncate">{currentScheduleItem?.room || 'No room'}</span>
                 </div>
               </div>
             </div>
@@ -389,7 +403,7 @@ const InstructorStatusDashboard = () => {
                 Today's Schedule
               </h3>
               <span className="text-xs sm:text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                {getTodaysDay()}
+                {getTodaysDay()}s
               </span>
             </div>
             {todaysSchedule.length > 0 ? (
@@ -442,7 +456,7 @@ const InstructorStatusDashboard = () => {
                             : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                         }`}
                       >
-                        {day.slice(0, 3)}
+                        {day}
                       </button>
                     ))}
                   </div>

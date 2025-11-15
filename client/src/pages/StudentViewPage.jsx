@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Clock, DoorOpen, Building, LogOut, ChevronDown, Filter, X, Calendar, User } from 'lucide-react';
+import { Search, MapPin, Clock,ChevronLeft,ChevronRight, DoorOpen, Building, LogOut, ChevronDown, Filter, X, Calendar, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 // Helper function to get initials
@@ -33,6 +33,7 @@ const getStatusStyle = (status) => {
 
 // Instructor Card Component
 const InstructorCard = ({ instructor, onClick }) => {
+  const currentStatus = instructor.currentStatus || {};
   const statusStyle = getStatusStyle(instructor.instructorStatus || instructor.status || 'Available');
   
   return (
@@ -58,21 +59,28 @@ const InstructorCard = ({ instructor, onClick }) => {
           {/* Status Badge */}
           <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full ${statusStyle.bgColor} border ${statusStyle.border} flex-shrink-0 ml-2`}>
             <div className={`w-2 h-2 rounded-full ${statusStyle.color} animate-pulse`}></div>
-            <span className={`text-xs font-medium ${statusStyle.textColor} whitespace-nowrap`}>
-              {instructor.instructorStatus || instructor.status || 'Available'}
+
+            {/* !! TODO the color is wrong and this commented out is displaying the wrong one */}
+            {/* <span className={`text-xs font-medium ${statusStyle.textColor} whitespace-nowrap`}>
+              {currentStatus.status || 'Available'}
+            </span> */}
+            {/* this is the correct status display but wrong color */}
+            <span className={`text-xs font-medium ${statusStyle.textColor}`}>
+              {instructor.instructorStatus || instructor.status || 'Unavailable'}
             </span>
+            
           </div>
         </div>
 
-        {/* Location Info */}
+        {/* Location Info - Now shows CURRENT location from schedule */}
         <div className="space-y-2 mb-3">
           <div className="flex items-center text-sm text-gray-600">
             <Building className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
-            <span className="truncate">{instructor.location || 'No location'}</span>
+            <span className="truncate">{currentStatus.location || 'No location'}</span>
           </div>
           <div className="flex items-center text-sm text-gray-600">
             <DoorOpen className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
-            <span className="truncate">{instructor.room || 'No room'}</span>
+            <span className="truncate">{currentStatus.room || 'No room'}</span>
           </div>
         </div>
 
@@ -106,8 +114,9 @@ const InstructorCard = ({ instructor, onClick }) => {
 };
 
 // Schedule Modal Component
-const ScheduleModal = ({ instructor, onClose }) => {
+const ScheduleModal = ({ instructor, onClose, currentStatus }) => {
   const [selectedDay, setSelectedDay] = useState(getTodaysDay());
+  const [scrollPosition, setScrollPosition] = useState(0);
   const scheduleDays = ['Sunday','Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   const selectedDaySchedule = (instructor.baseSchedule || [])
@@ -115,6 +124,20 @@ const ScheduleModal = ({ instructor, onClose }) => {
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
   const statusStyle = getStatusStyle(instructor.instructorStatus || instructor.status || 'Available');
+
+  // Scroll functions for day tabs
+  const scrollDays = (direction) => {
+    const container = document.getElementById('student-day-tabs-container');
+    if (!container) return;
+    
+    const scrollAmount = 120;
+    const newPosition = direction === 'left' 
+      ? Math.max(0, scrollPosition - scrollAmount)
+      : Math.min(container.scrollWidth - container.clientWidth, scrollPosition + scrollAmount);
+    
+    container.scrollTo({ left: newPosition, behavior: 'smooth' });
+    setScrollPosition(newPosition);
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -164,11 +187,11 @@ const ScheduleModal = ({ instructor, onClose }) => {
             <div className="mt-4 flex flex-col sm:flex-row gap-2">
               <div className="flex items-center text-sm bg-blue-50 text-blue-700 px-3 py-2 rounded-lg flex-1">
                 <Building className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span className="truncate">{instructor.location || 'No location'}</span>
+                <span className="truncate">{currentStatus.location || 'No location'}</span>
               </div>
               <div className="flex items-center text-sm bg-blue-50 text-blue-700 px-3 py-2 rounded-lg flex-1">
                 <DoorOpen className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span className="truncate">{instructor.room || 'No room'}</span>
+                <span className="truncate">{currentStatus.room || 'No room'}</span>
               </div>
             </div>
           </div>
@@ -180,9 +203,23 @@ const ScheduleModal = ({ instructor, onClose }) => {
             </h3>
 
             {/* Day Tabs */}
-            <div className="mb-4">
-              <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-200">
-                <div className="flex space-x-1 min-w-max">
+            <div className="mb-4 relative">
+              <div className="flex items-center">
+                {/* Left Arrow */}
+                <button
+                  onClick={() => scrollDays('left')}
+                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white hover:bg-gray-100 rounded-lg shadow-sm mr-1 transition-colors lg:hidden"
+                  aria-label="Scroll left"
+                >
+                  <ChevronLeft className="w-4 h-4 text-gray-600" />
+                </button>
+
+                <div
+                  className="flex-1 overflow-x-auto scrollbar-hide border-b border-gray-200"
+                  id="student-day-tabs-container"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  >
+                  <div className="flex space-x-1 min-w-max lg:min-w-0 lg:justify-start">
                   {scheduleDays.map(day => (
                     <button
                       key={day}
@@ -198,6 +235,16 @@ const ScheduleModal = ({ instructor, onClose }) => {
                   ))}
                 </div>
               </div>
+
+                  {/* Right Arrow */}
+                  <button
+                    onClick={() => scrollDays('right')}
+                    className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white hover:bg-gray-100 rounded-lg shadow-sm ml-1 transition-colors lg:hidden"
+                    aria-label="Scroll right"
+                  >
+                    <ChevronRight className="w-4 h-4 text-gray-600" />
+                  </button>
+                  </div>
             </div>
 
             {/* Schedule List */}
@@ -341,12 +388,12 @@ const StudentDashboard = () => {
                 {/* Profile Dropdown */}
                 {isProfileOpen && (
                   <div 
-                    className="absolute left-0 mt-2 w-64 bg-white rounded-lg shadow-xl py-1 z-50 ring-1 ring-black ring-opacity-5"
+                    className="absolute left-0 mt-2 w-64 bg-white rounded shadow-xl py-1 z-50 ring ring-black ring-opacity-5"
                     onMouseLeave={() => setIsProfileOpen(false)}
                   >
                     <div className="px-4 py-3">
                       <p className="text-sm font-medium text-gray-900">{user.name || 'Student'}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">Student Portal</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{user.email || 'No email'}</p>
                     </div>
                     <div className="border-t border-gray-100"></div>
                     <button
@@ -365,9 +412,9 @@ const StudentDashboard = () => {
               
               <div className="min-w-0">
                 <h1 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                  Find Instructors
+                  {user.name || 'Student'}
                 </h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Track instructor availability</p>
+                <p className="text-xs text-gray-500 hidden sm:block">Student Portal</p>
               </div>
             </div>
 
@@ -494,6 +541,7 @@ const StudentDashboard = () => {
         <ScheduleModal
           instructor={selectedInstructor}
           onClose={() => setSelectedInstructor(null)}
+          currentStatus={selectedInstructor.currentStatus || {}}
         />
       )}
     </div>
