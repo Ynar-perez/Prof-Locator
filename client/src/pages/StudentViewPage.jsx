@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import API_URL from '../apiConfig';
 import { Search, MapPin, Clock,ChevronLeft,ChevronRight, DoorOpen, Building, LogOut, ChevronDown, Filter, X, Calendar, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -328,20 +330,14 @@ const StudentDashboard = () => {
         setError(null);
         
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/users/instructors', {
-          method: 'GET',
+        const response = await axios.get(`${API_URL}/api/users/instructors`, {
           headers: {
             'Content-Type': 'application/json',
             'x-auth-token': token,
           },
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch instructors: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        setInstructors(data);
+        setInstructors(response.data);
       } catch (err) {
         console.error('Error fetching instructors:', err);
         setError(err.message);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'; // Add useEffect & useCallback
 import axios from 'axios';
+import API_URL from '../apiConfig';
 import { useAuth } from '../context/AuthContext';
 import { 
   ChartColumnBig,
@@ -60,7 +61,7 @@ const AdminDashboard = () => {
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get('/api/users', getAuthHeaders());
+      const res = await axios.get(`${API_URL}/api/users`, getAuthHeaders());
       setAllUsers(res.data);
       setError(null);
     } catch (err) {
@@ -100,7 +101,7 @@ const AdminDashboard = () => {
     console.log('Adding new user:', formData);
     try {
       // formData should be { name, email, password, role }
-      const res = await axios.post('/api/users/register', formData, getAuthHeaders());
+      const res = await axios.post(`${API_URL}/api/users/register`, formData, getAuthHeaders());
       console.log('User created:', res.data);
       
       // Add new user to our state to refresh the list instantly
@@ -121,7 +122,7 @@ const AdminDashboard = () => {
     
     try {
       // Use userId for the API call
-      await axios.delete(`/api/users/${userId}`, getAuthHeaders());
+      await axios.delete(`${API_URL}/api/users/${userId}`, getAuthHeaders());
       setAllUsers(prevUsers => prevUsers.filter(u => u._id !== userId));
       
       // Use the stored 'name' in the toast message
@@ -150,7 +151,7 @@ const AdminDashboard = () => {
   const handleEditUserSubmit = async (userId, updates) => {
     try {
       // Your backend 'updates' object can handle {name, email, role, password}
-      const res = await axios.put(`/api/users/${userId}`, updates, getAuthHeaders());
+      const res = await axios.put(`${API_URL}/api/users/${userId}`, updates, getAuthHeaders());
       
       // Update the user in our main 'allUsers' state
       setAllUsers(prevUsers => 
@@ -172,7 +173,7 @@ const AdminDashboard = () => {
   };
 
   const updateSchedule = async (userId, schedule) => {
-    return axios.put(`/api/users/${userId}/schedule`, schedule, getAuthHeaders());
+    return axios.put(`${API_URL}/api/users/${userId}/schedule`, schedule, getAuthHeaders());
   };
 
   // !! --- FILTERED USERS ---

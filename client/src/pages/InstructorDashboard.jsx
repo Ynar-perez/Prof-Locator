@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_URL from '../apiConfig';
 import { X, Clock, DoorOpen, MapPin, Calendar, Building, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -147,7 +148,7 @@ const InstructorStatusDashboard = () => {
     setError(null);
     try {
       // This is the single endpoint to get all data for the dashboard
-      const response = await axios.get('/api/instructor/me/dashboard', getAuthHeaders());
+      const response = await axios.get(`${API_URL}/api/instructor/me/dashboard`, getAuthHeaders());
       setDashboardData(response.data);
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
@@ -169,7 +170,7 @@ const InstructorStatusDashboard = () => {
 
     try {
       // This endpoint needs to be created in your backend
-      await axios.post('/api/instructor/me/status-override', {
+      await axios.post(`${API_URL}/api/instructor/me/status-override`, {
         status: selectedStatus,
         duration: selectedDuration, // '30', '60', '120', 'eod'
       }, getAuthHeaders());
@@ -236,6 +237,7 @@ const InstructorStatusDashboard = () => {
     container.scrollTo({ left: newPosition, behavior: 'smooth' });
     setScrollPosition(newPosition);
   };
+
 
 
 

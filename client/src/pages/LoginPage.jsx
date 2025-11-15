@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import API_URL from '../apiConfig';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
@@ -30,7 +31,7 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const res = await axios.post('/api/users/login', { email, password });
+      const res = await axios.post(`${API_URL}/api/users/login`, { email, password });
       const { token } = res.data;
       login(token);
       toast.success('Logged in successfully.');

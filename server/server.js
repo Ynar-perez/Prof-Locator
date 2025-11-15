@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
+const cors = require('cors'); // 💡 1. Import cors
+
 // --- Route file Imports ---
 const userRoutes = require('./routes/userRoutes'); 
 const instructorRoutes = require('./routes/instructorRoutes');
@@ -10,6 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(express.json()); 
+app.use(cors()); // 💡 2. Use cors (This allows all cross-origin requests)
 
 // --- Database Connection ---
 mongoose.connect(process.env.MONGO_URI)
