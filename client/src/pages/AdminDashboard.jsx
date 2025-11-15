@@ -2,18 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react'; // Add useEffec
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { 
-  CalendarSync,
-  Home, 
   ChartColumnBig,
-  NotebookPen, // For "Planner"
-  Brain, 
-  BarChartBig, // For "Dashboard"
-  MoreHorizontal, 
-  UserPlus, // For "Invite"
-  Zap, // For "Upgrade"
   LogOut,
-  ArrowRightToLine, // For the toggle
-  Menu, X, Users, GraduationCap, Clock, Search, 
+  Menu, Users, GraduationCap, Clock, Search, 
   Plus, Edit2, Trash2, MoreVertical, ChevronDown,
   Calendar, UserCheck, UserX, Bell, Settings
 } from 'lucide-react';
