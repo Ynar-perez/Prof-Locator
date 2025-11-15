@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   CalendarSync,
   Home, 
+  ChartColumnBig,
   NotebookPen, // For "Planner"
   Brain, 
   BarChartBig, // For "Dashboard"
@@ -23,17 +24,19 @@ import { toast } from 'sonner';
 import StatsCard from '../components/admin/StatsCard';
 import ScheduleModal from '../components/admin/ScheduleModal';
 import AddUserModal from '../components/admin/AddUserModal';
+import EditUserModal from '../components/admin/EditUserModal';
 
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeModule, setActiveModule] = useState('analytics');
   const [activeTab, setActiveTab] = useState('instructors');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-
 
   const [allUsers, setAllUsers] = useState([]); // This will hold our real data
   const [isLoading, setIsLoading] = useState(true); // For a loading spinner
@@ -80,7 +83,7 @@ const AdminDashboard = () => {
     fetchUsers();
   }, [fetchUsers]); // Run this function when the component loads
 
-  // 💡 --- DERIVE STATS FROM LIVE DATA ---
+  // !!--- DERIVE STATS FROM LIVE DATA ---
   const instructorCount = allUsers.filter(u => u.role === 'INSTRUCTOR').length;
   const studentCount = allUsers.filter(u => u.role === 'STUDENT').length;
 
@@ -94,7 +97,12 @@ const AdminDashboard = () => {
     setSelectedUser(null);
   };
 
-  // 💡 --- UPDATE 'ADD USER' FUNCTION ---
+  const handleSidebarClick = (moduleName) => {
+    setActiveModule(moduleName);
+    setSidebarOpen(false); // Close sidebar on mobile
+  };
+
+  // !! --- 'ADD USER' FUNCTION ---
   const handleAddUserSubmit = async (formData) => {
     console.log('Adding new user:', formData);
     try {
@@ -141,7 +149,36 @@ const AdminDashboard = () => {
     }
   };
 
-  // 💡 --- UPDATE FILTERED USERS ---
+  const handleOpenEditModal = (user) => {
+    setSelectedUser(user); // Set the user to be edited
+    setShowEditModal(true); // Open the modal
+  };
+
+  const handleEditUserSubmit = async (userId, updates) => {
+    try {
+      // Your backend 'updates' object can handle {name, email, role, password}
+      const res = await axios.put(`/api/users/${userId}`, updates, getAuthHeaders());
+      
+      // Update the user in our main 'allUsers' state
+      setAllUsers(prevUsers => 
+        prevUsers.map(u => 
+          u._id === userId ? res.data.user : u 
+        )
+      );
+      
+      toast.success(`User ${res.data.user.name} updated successfully.`);
+      setShowEditModal(false); // Close the modal
+      setSelectedUser(null); // Clear the selected user
+      
+    } catch (err) {
+      const errorMsg = err.response?.data?.msg || 'Failed to update user.';
+      console.error("Error updating user:", errorMsg);
+      toast.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+  };
+
+  // !! --- FILTERED USERS ---
   const filteredUsers = allUsers.filter(u => 
     (activeTab === 'instructors' ? u.role === 'INSTRUCTOR' : u.role === 'STUDENT') &&
     (u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -202,9 +239,8 @@ const AdminDashboard = () => {
     >
       {/* --- Top Section: Logo & Toggle --- */}
       <div className="flex flex-col items-center space-y-4">
-        {/* 'J' Logo from screenshot */}
         <button className="flex items-center justify-center w-12 h-12 bg-teal-600 rounded-xl text-xl font-bold">
-          J
+          PL
         </button>
         
         {/* Close button for mobile (from your original code) */}
@@ -217,51 +253,58 @@ const AdminDashboard = () => {
 
       {/* --- Middle Section: Main Nav --- */}
       <nav className="flex flex-col items-center space-y-2 flex-grow w-full px-2">
-        {/* Each link is a 'relative group' to allow for the 'absolute' tooltip */}
         
+        {/* --- ANALYTICS TAB --- */}
         <a 
-          href="#" 
-          className="relative group flex justify-center items-center w-12 h-12 
-            border border-gray-400 rounded-xl 
-            hover:bg-blue-600/90 transition-colors"
+          onClick={() => handleSidebarClick('analytics')}
+          href="#"
+          className={`
+            relative group flex justify-center items-center w-12 h-12 
+            rounded-xl transition-colors
+            ${activeModule === 'analytics' ? 'bg-blue-600 shadow-lg shadow-blue-500/30' : 'border border-gray-400 hover:bg-blue-600/90'}
+          `}
         >
-          <Users className="w-6 h-6 text-gray-400 group-hover:text-white" />
+          <ChartColumnBig 
+            className={`w-6 h-6 ${activeModule === 'analytics' ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}  
+          />
           {/* Tooltip */}
           <span className="absolute left-full ml-5 px-3 py-1.5 bg-blue-600/90 rounded-md text-sm font-medium text-white whitespace-nowrap invisible opacity-0 scale-95 group-hover:visible group-hover:opacity-100 group-hover:scale-100 transition-all duration-150">
-            User Management
+            Dashboard
           </span>
         </a>
         <span className="text-xs text-black font-medium">
-          Users
+          Analytics
         </span>
         <hr className="w-10 border-gray-700 my-2" />
 
+        {/* --- USERS TAB --- */}
         <a 
+          onClick={() => handleSidebarClick('users')}
           href="#" 
-          className="
-            relative group flex flex-col items-center justify-center w-12 h-12 rounded-xl 
-            bg-blue-600/90 shadow-lg shadow-blue-500/30 
-            transition-colors
-          "
+          className={`
+            relative group flex justify-center items-center w-12 h-12 
+            rounded-xl transition-colors
+            ${activeModule === 'users' ? 'bg-blue-600 shadow-lg shadow-blue-500/30' : 'border border-gray-400 hover:bg-blue-600/90'}
+          `}
         >
-          {/* The icon */}
-          <CalendarSync className="w-6 h-6 text-white" />
+          <Users 
+            className={`w-6 h-6 ${activeModule === 'users' ? 'text-white' : 'text-gray-400 group-hover:text-white'}`} 
+          />
           
           {/* The text below the icon */}
           <span className="absolute left-full ml-5 px-3 py-1.5 bg-blue-600/90 rounded-md text-sm font-medium text-white whitespace-nowrap invisible opacity-0 scale-95 group-hover:visible group-hover:opacity-100 group-hover:scale-100 transition-all duration-150">
-            Planer
+            User Management
           </span>
           
         </a>
         <span className="text-xs text-black font-medium">
-          Planner
+          Users
         </span>
 
         <hr className="w-10 border-gray-200 my-2" />
       </nav>
 
       {/* --- Bottom Section: Invite, Upgrade, Logout --- */}
-      {/* 'mt-auto' is removed because 'flex-grow' on nav does the job */}
       <div className="flex flex-col items-center space-y-2">
       <button onClick={logout} className="relative group flex justify-center items-center w-12 h-12 rounded-xl border border-gray-300 hover:bg-red-500 hover:border-red-500 transition-colors">
         <LogOut className="w-6 h-6 text-gray-400 group-hover:text-white" />
@@ -282,7 +325,9 @@ const AdminDashboard = () => {
                 <Menu className="w-6 h-6" />
               </button>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">
-                Command Center
+                {/* 💡 Dynamic Header Title */}
+                {activeModule === 'analytics' && 'Analytics Dashboard'}
+                {activeModule === 'users' && 'User Management'}
               </h1>
             </div>
             
@@ -301,99 +346,109 @@ const AdminDashboard = () => {
 
         {/* Stats Cards */}
         <div className="p-4 md:p-6 lg:p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
-            {stats.map((stat, idx) => (
-              <div key={idx}>
-                <StatsCard
-                  title={stat.title}
-                  value={stat.value}
-                  color={stat.color}
-                  icon={stat.icon}
-                />
-              </div>
-            ))}
-          </div>
-
-          {/* User Management Section */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="p-4 md:p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-800">User Management</h2>
-                <button 
-                  onClick={() => setShowAddUserModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-lg hover:from-blue-700 hover:to-violet-700 transition"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add User</span>
-                </button>
-              </div>
-
-              {/* Tabs */}
-              <div className="flex gap-2 mt-4 border-b border-gray-200">
-                <button
-                  onClick={() => setActiveTab('instructors')}
-                  className={`px-4 py-2 font-medium transition ${
-                    activeTab === 'instructors'
-                      ? 'text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Instructors
-                </button>
-                <button
-                  onClick={() => setActiveTab('students')}
-                  className={`px-4 py-2 font-medium transition ${
-                    activeTab === 'students'
-                      ? 'text-violet-600 border-b-2 border-violet-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Students
-                </button>
-              </div>
-
-              {/* Search */}
-              <div className="relative mt-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+          {/* RENDER THE USERS MODULE (Current Content) */}
+          {activeModule === 'analytics' && (
+            <div>
+            {/* Stats Cards (Moved Here) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
+              {stats.map((stat, idx) => (
+                <div key={idx}>
+                  <StatsCard
+                    title={stat.title}
+                    value={stat.value}
+                    color={stat.color}
+                    icon={stat.icon}
+                  />
+                </div>
+              ))}
             </div>
 
-            {/* Table - Desktop */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {/* 💡 Add loading and error checks */}
+              {/* Graph Placeholder */}
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Activity Graph</h2>
+                <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <p className="text-gray-500">Graph placeholder (Chart.js will go here)</p>
+                </div>
+              </div>
+            </div>
+          )}
+        
+          {/* --- USERS MODULE --- */}
+          {activeModule === 'users' && (
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              {/* Start of User Management Content */}
+              <div className="p-4 md:p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-gray-800">User List</h2>
+                  <button 
+                    onClick={() => setShowAddUserModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-lg hover:from-blue-700 hover:to-violet-700 transition"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add User</span>
+                  </button>
+                </div>
 
-                  {isLoading ? (
-  <tr>
-    <td colSpan="5" className="p-6 text-center">Loading users...</td>
-  </tr>
+                {/* Tabs */}
+                <div className="flex gap-2 mt-4 border-b border-gray-200">
+                  <button
+                    onClick={() => setActiveTab('instructors')}
+                    className={`px-4 py-2 font-medium transition ${
+                      activeTab === 'instructors'
+                        ? 'text-blue-600 border-b-2 border-blue-600'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Instructors
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('students')}
+                    className={`px-4 py-2 font-medium transition ${
+                      activeTab === 'students'
+                        ? 'text-violet-600 border-b-2 border-violet-600'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Students
+                  </button>
+                </div>
+
+                {/* Search */}
+                <div className="relative mt-4">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Table - Desktop */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  {/* ... (Your <thead> is fine) ... */}
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {isLoading ? (
+                      <tr><td colSpan="5" className="p-6 text-center">Loading users...</td></tr>
                     ) : error ? (
-                      <tr>
-                        <td colSpan="5" className="p-6 text-center text-red-500">{error}</td>
-                      </tr>
+                      <tr><td colSpan="5" className="p-6 text-center text-red-500">{error}</td></tr>
                     ) : (
                       filteredUsers.map((user) => (
-                        <tr key={user.id} className="hover:bg-gray-50 transition">
+                        <tr key={user._id} className="hover:bg-gray-50 transition">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              {/* Placeholder avatar */}
                               <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
                                 {user.name.charAt(0)}
                               </span>
@@ -403,15 +458,11 @@ const AdminDashboard = () => {
                               </div>
                             </div>
                           </td>
-
-                          <td className="px-6 py-4 text-sm text-gray-500">#{user._id}</td>
-
+                          <td className="px-6 py-4 text-sm text-gray-500">#{user._id.slice(-6)}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{user.role}</td>
-
                           <td className="px-6 py-4">
                             <StatusBadge user={user} />
                           </td>
-
                           <td className="px-6 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               {user.role === "INSTRUCTOR" && (
@@ -425,83 +476,83 @@ const AdminDashboard = () => {
                                   <Calendar className="w-4 h-4" />
                                 </button>
                               )}
-
-                              <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                              <button 
+                                onClick={() => handleOpenEditModal(user)}
+                                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                              >
                                 <Edit2 className="w-4 h-4" />
                               </button>
-
                               <button
-                                  onClick={() => initiateDelete(user)} // <-- Change the function name here
-                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                onClick={() => initiateDelete(user)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                               >
-                                  <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
                           </td>
                         </tr>
                       ))
                     )}
+                  </tbody>
+                </table>
+              </div>
 
-                </tbody>
-              </table>
-            </div>
-
-            {/* Cards - Mobile/Tablet */}
-            <div className="md:hidden p-4 space-y-4">
-            {isLoading ? (
-                <p className="text-center">Loading users...</p>
-              ) : error ? (
-                <p className="text-center text-red-500">{error}</p>
-              ) : (
-                filteredUsers.map((user) => (
-                <div key={user.id} className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
-                        {user.name.charAt(0)}
-                      </span>
-                      {/* <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full" /> */}
-                      <div>
-                        <p className="font-medium text-gray-900">{user.name}</p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
+              {/* Cards - Mobile/Tablet */}
+              <div className="md:hidden p-4 space-y-4">
+                {isLoading ? (
+                  <p className="text-center">Loading users...</p>
+                ) : error ? (
+                  <p className="text-center text-red-500">{error}</p>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <div key={user._id} className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
+                            {user.name.charAt(0)}
+                          </span>
+                          <div>
+                            <p className="font-medium text-gray-900">{user.name}</p>
+                            <p className="text-sm text-gray-500">{user.email}</p>
+                          </div>
+                        </div>
+                        <StatusBadge user={user} />
+                      </div>
+                      <div className="flex items-center justify-between text-sm mb-3">
+                        <span className="text-gray-500">ID: #{user._id.slice(-6)}</span>
+                        <span className="font-medium text-gray-700">{user.role}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        {user.role === 'INSTRUCTOR' && (
+                          <button
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowScheduleModal(true);
+                            }}
+                            className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
+                          >
+                            Schedule
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => handleOpenEditModal(user)}
+                          className="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => initiateDelete(user)}
+                          className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
-                    <StatusBadge user={user} />
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-sm mb-3">
-                    <span className="text-gray-500">ID: #{user._id}</span>
-                    <span className="font-medium text-gray-700">{user.role}</span>
-                    {/* <span className="text-gray-500">ID: #{user.id}</span>
-                    <span className="font-medium text-gray-700">{user.role}</span> */}
-                  </div>
-
-                  <div className="flex gap-2">
-                    {user.role === 'INSTRUCTOR' && (
-                      <button
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setShowScheduleModal(true);
-                        }}
-                        className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
-                      >
-                        Schedule
-                      </button>
-                    )}
-                    <button className="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
-                      Edit
-                    </button>
-                    <button 
-                    onClick={() => initiateDelete(user)}
-                    className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
+              {/* End of User Management Content */}
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -510,6 +561,17 @@ const AdminDashboard = () => {
         <AddUserModal
           onClose={() => setShowAddUserModal(false)}
           onSubmit={handleAddUserSubmit} // 💡 This is now connected!
+        />
+      )}
+
+      {showEditModal && selectedUser && (
+        <EditUserModal
+          user={selectedUser}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedUser(null);
+          }}
+          onSubmit={handleEditUserSubmit}
         />
       )}
 
