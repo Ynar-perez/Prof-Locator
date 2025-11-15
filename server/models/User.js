@@ -9,11 +9,23 @@ const scheduleItemSchema = new Schema({
     required: true,
     enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
   },
-  time: {
-    type: String, // contains time i.e --> "8:00AM - 11:00AM"
+  // 24-hour format
+  startTime: {
+    type: String, 
     required: true
+  },
+  endTime: {
+    type: String,
+    required: true
+  },
+  // This is the "Base Status" for that time block
+  status: {
+    type: String,
+    required: true,
+    enum: ['Available', 'In Class', 'In Meeting', 'Busy', 'Away', 'Unavailable'],
+    default: 'Available'
   }
-});
+}, { _id: false }); // _id: false makes this a cleaner sub-document
 
 const userSchema = new Schema({
   // --- Fields for ALL Users ---

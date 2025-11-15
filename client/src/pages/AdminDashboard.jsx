@@ -18,6 +18,8 @@ import {
   Calendar, UserCheck, UserX, Bell, Settings
 } from 'lucide-react';
 
+import ProfLocatorLogo from '../assets/ProfLocator-Circle.png'
+
 import ConfirmationDialog from '../components/shared/ConfirmationDialog';
 import { toast } from 'sonner';
 
@@ -239,9 +241,8 @@ const AdminDashboard = () => {
     >
       {/* --- Top Section: Logo & Toggle --- */}
       <div className="flex flex-col items-center space-y-4">
-        <button className="flex items-center justify-center w-12 h-12 bg-teal-600 rounded-xl text-xl font-bold">
-          PL
-        </button>
+
+        <img className='h-16 w-16' src={ProfLocatorLogo} alt="Proflocator Icon" />
         
         {/* Close button for mobile (from your original code) */}
         {/* <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-400">
@@ -308,7 +309,7 @@ const AdminDashboard = () => {
       <div className="flex flex-col items-center space-y-2">
       <button onClick={logout} className="relative group flex justify-center items-center w-12 h-12 rounded-xl border border-gray-300 hover:bg-red-500 hover:border-red-500 transition-colors">
         <LogOut className="w-6 h-6 text-gray-400 group-hover:text-white" />
-        <span className="absolute left-full ml-5 px-3 py-1.5 bg-blue-600/90 rounded-md text-sm font-medium text-white whitespace-nowrap invisible opacity-0 scale-95 group-hover:visible group-hover:opacity-100 group-hover:scale-100 transition-all duration-150">
+        <span className="absolute left-full ml-5 px-3 py-1.5 bg-red-600/90 rounded-md text-sm font-medium text-white whitespace-nowrap invisible opacity-0 scale-95 group-hover:visible group-hover:opacity-100 group-hover:scale-100 transition-all duration-150">
           Logout
         </span>
       </button>
@@ -579,11 +580,12 @@ const AdminDashboard = () => {
       {showScheduleModal && selectedUser && (
         <ScheduleModal
           // PROP 1: Pass the dynamic user name
-          userName={selectedUser.name}
+          // userName={selectedUser.name}
+          user={selectedUser}
           // PROP 2: Pass the handler function for closing
           onClose={handleCloseModal}
-          // Note: The visibility logic (showScheduleModal && selectedUser && ...)
-          // keeps the component unmounted when closed, which is often cleaner.
+          // PROP 3: Pass the submit handler
+          onSubmit={handleEditUserSubmit} // 💡 Pass the submit handler
         />
       )}
 
