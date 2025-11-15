@@ -194,7 +194,7 @@ router.get("/instructors", auth, async (req, res) => {
     // 1. Find all users where the role is 'INSTRUCTOR'
     const instructors = await User.find({ role: "INSTRUCTOR" })
       // 2. Select only the fields the student needs to see
-      .select("name status schedule email") // We include email as it's the login 'name'
+      .select("name email instructorStatus baseSchedule location room")
       // 3. Sort them alphabetically by name
       .sort({ name: 1 });
 
