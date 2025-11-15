@@ -180,6 +180,10 @@ const AdminDashboard = () => {
     }
   };
 
+  const updateSchedule = async (userId, schedule) => {
+    return axios.put(`/api/users/${userId}/schedule`, schedule, getAuthHeaders());
+  };
+
   // !! --- FILTERED USERS ---
   const filteredUsers = allUsers.filter(u => 
     (activeTab === 'instructors' ? u.role === 'INSTRUCTOR' : u.role === 'STUDENT') &&
@@ -459,7 +463,7 @@ const AdminDashboard = () => {
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-500">#{user._id.slice(-6)}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500">#{user._id}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{user.role}</td>
                           <td className="px-6 py-4">
                             <StatusBadge user={user} />
@@ -520,7 +524,7 @@ const AdminDashboard = () => {
                         <StatusBadge user={user} />
                       </div>
                       <div className="flex items-center justify-between text-sm mb-3">
-                        <span className="text-gray-500">ID: #{user._id.slice(-6)}</span>
+                        <span className="text-gray-500">ID: #{user._id}</span>
                         <span className="font-medium text-gray-700">{user.role}</span>
                       </div>
                       <div className="flex gap-2">
@@ -579,12 +583,8 @@ const AdminDashboard = () => {
       {/* Schedule Modal */}
       {showScheduleModal && selectedUser && (
         <ScheduleModal
-          // PROP 1: Pass the dynamic user name
-          // userName={selectedUser.name}
           user={selectedUser}
-          // PROP 2: Pass the handler function for closing
           onClose={handleCloseModal}
-          // PROP 3: Pass the submit handler
           onSubmit={handleEditUserSubmit} // 💡 Pass the submit handler
         />
       )}

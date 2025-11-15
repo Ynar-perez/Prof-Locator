@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
@@ -24,6 +23,13 @@ const scheduleItemSchema = new Schema({
     required: true,
     enum: ['Available', 'In Class', 'In Meeting', 'Busy', 'Away', 'Unavailable'],
     default: 'Available'
+  },
+  // Location and Room for this specific time block
+  location: {
+    type: String,
+  },
+  room: {
+    type: String,
   }
 }, { _id: false }); // _id: false makes this a cleaner sub-document
 
@@ -52,13 +58,28 @@ const userSchema = new Schema({
   },
 
   // --- Fields for INSTRUCTOR Only ---
+
+  // This is the "Base Schedule"
+  baseSchedule: [scheduleItemSchema], // This will be an array of the items above
+  
+  location: {
+    type: String,
+  },
+  room: {
+    type: String,
+  },
+
   instructorStatus: {
     type: String,
     enum: ['Available', 'In Class', 'In Meeting', 'Busy', 'Away', 'Unavailable'],
     default: 'Unavailable' // Good default for new instructors
   },
 
-  schedule: [scheduleItemSchema] // This will be an array of the items above
+  // This field controls WHEN the override ends.
+  statusOverrideExpires: {
+    type: Date,
+    default: null
+  }
   
 }, {
   // Adds `createdAt` and `updatedAt` timestamps automatically

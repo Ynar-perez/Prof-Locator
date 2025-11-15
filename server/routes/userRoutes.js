@@ -1,23 +1,23 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
-const { auth, isAdmin } = require('../middleware/authMiddleware');
+const { auth, isAdmin } = require("../middleware/authMiddleware");
 
 // -----------------------------------------------------------------
 // 💡 @route   GET /api/users (READ - Admin Only)
 // 💡 @desc    Get all users
 // 💡 @access  Private (Admin)
 // -----------------------------------------------------------------
-router.get('/', [auth, isAdmin], async (req, res) => {
+router.get("/", [auth, isAdmin], async (req, res) => {
   try {
-    const users = await User.find().select('-password').sort({ name: 1 });
+    const users = await User.find().select("-password").sort({ name: 1 });
     res.status(200).json(users);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
@@ -26,29 +26,32 @@ router.get('/', [auth, isAdmin], async (req, res) => {
 // 💡 @access  Private (Admin)
 // -----------------------------------------------------------------
 // We are adding the security check here: [auth, isAdmin]
-router.post('/register', [auth, isAdmin], async (req, res) => {
+router.post("/register", [auth, isAdmin], async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(400).json({ msg: 'User already exists' });
+      return res.status(400).json({ msg: "User already exists" });
     }
-    user = new User({ name, email, password, role: role || 'STUDENT' });
+    user = new User({ name, email, password, role: role || "STUDENT" });
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
     await user.save();
 
-    // Since this is an Admin creating the user, we don't usually return a token, 
+    // Since this is an Admin creating the user, we don't usually return a token,
     // but the newly created user (excluding password).
-    res.status(201).json({ msg: 'User created successfully', user: {
+    res.status(201).json({
+      msg: "User created successfully",
+      user: {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role
-    }}); 
+        role: user.role,
+      },
+    });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
@@ -57,7 +60,7 @@ router.post('/register', [auth, isAdmin], async (req, res) => {
 // 💡 @desc    Log in a user and get a token
 // 💡 @access  Public
 // -----------------------------------------------------------------
-router.post('/login', async (req, res) => {
+router.post("/login", async (req, res) => {
   try {
     // 1. Get email and password from the request body
     const { email, password } = req.body;
@@ -68,7 +71,7 @@ router.post('/login', async (req, res) => {
     // 3. Check if user exists.
     //    If not, send a generic "Invalid Credentials" error.
     if (!user) {
-      return res.status(400).json({ msg: 'Invalid Credentials' });
+      return res.status(400).json({ msg: "Invalid Credentials" });
     }
 
     // 4. Compare the submitted password with the hashed password in the DB
@@ -77,7 +80,7 @@ router.post('/login', async (req, res) => {
     // 5. If passwords don't match, send the same generic error.
     //    (This prevents attackers from knowing *which* part was wrong)
     if (!isMatch) {
-      return res.status(400).json({ msg: 'Invalid Credentials' });
+      return res.status(400).json({ msg: "Invalid Credentials" });
     }
 
     // 6. If passwords match, user is valid. Create a JWT payload.
@@ -93,7 +96,7 @@ router.post('/login', async (req, res) => {
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: '24h' },
+      { expiresIn: "24h" },
       (err, token) => {
         if (err) throw err;
         res.status(200).json({ token }); // Send 200 OK for a successful login
@@ -101,7 +104,7 @@ router.post('/login', async (req, res) => {
     );
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
@@ -110,7 +113,7 @@ router.post('/login', async (req, res) => {
 // 💡 @desc    Get the logged-in user's data
 // 💡 @access  Private (because we use the 'auth' middleware)
 // -----------------------------------------------------------------
-router.get('/me', auth, async (req, res) => {
+router.get("/me", auth, async (req, res) => {
   res.status(200).json(req.user);
 });
 
@@ -118,7 +121,7 @@ router.get('/me', auth, async (req, res) => {
 // 💡 @route   PUT /api/users/:id (UPDATE - Admin Only)
 // 💡 @access  Private (Admin)
 // -----------------------------------------------------------------
-router.put('/:id', [auth, isAdmin], async (req, res) => {
+router.put("/:id", [auth, isAdmin], async (req, res) => {
   try {
     const userId = req.params.id;
     const updates = req.body;
@@ -128,26 +131,26 @@ router.put('/:id', [auth, isAdmin], async (req, res) => {
       const salt = await bcrypt.genSalt(10);
       updates.password = await bcrypt.hash(updates.password, salt);
     }
-    
+
     // Find the user by ID and update the fields provided in the body
     const user = await User.findByIdAndUpdate(
       userId,
       { $set: updates }, // $set updates only the fields provided
       { new: true, runValidators: true } // 'new: true' returns the updated document
-    ).select('-password'); // Exclude the password from the response
+    ).select("-password"); // Exclude the password from the response
 
     if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
+      return res.status(404).json({ msg: "User not found" });
     }
 
-    res.status(200).json({ msg: 'User updated successfully', user });
+    res.status(200).json({ msg: "User updated successfully", user });
   } catch (err) {
     console.error(err.message);
     // This catches errors like invalid MongoDB ObjectId format
-    if (err.kind === 'ObjectId') {
-        return res.status(404).json({ msg: 'Invalid user ID format' });
+    if (err.kind === "ObjectId") {
+      return res.status(404).json({ msg: "Invalid user ID format" });
     }
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
@@ -155,7 +158,7 @@ router.put('/:id', [auth, isAdmin], async (req, res) => {
 // 💡 @route   DELETE /api/users/:id (DELETE - Admin Only)
 // 💡 @access  Private (Admin)
 // -----------------------------------------------------------------
-router.delete('/:id', [auth, isAdmin], async (req, res) => {
+router.delete("/:id", [auth, isAdmin], async (req, res) => {
   try {
     const userId = req.params.id;
 
@@ -163,21 +166,21 @@ router.delete('/:id', [auth, isAdmin], async (req, res) => {
     const user = await User.findByIdAndDelete(userId);
 
     if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
-    }
-    
-    // Check if the Admin is trying to delete themselves (optional, but good)
-    if (user._id.toString() === req.user.id) {
-        // You might want to implement a stronger check to prevent self-deletion
+      return res.status(404).json({ msg: "User not found" });
     }
 
-    res.status(200).json({ msg: 'User removed successfully' });
+    // Check if the Admin is trying to delete themselves (optional, but good)
+    if (user._id.toString() === req.user.id) {
+      // You might want to implement a stronger check to prevent self-deletion
+    }
+
+    res.status(200).json({ msg: "User removed successfully" });
   } catch (err) {
     console.error(err.message);
-    if (err.kind === 'ObjectId') {
-        return res.status(404).json({ msg: 'Invalid user ID format' });
+    if (err.kind === "ObjectId") {
+      return res.status(404).json({ msg: "Invalid user ID format" });
     }
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
@@ -186,19 +189,19 @@ router.delete('/:id', [auth, isAdmin], async (req, res) => {
 // 💡 @desc    Get all instructors, their status, and schedule (Student View)
 // 💡 @access  Private (Any authenticated user)
 // -----------------------------------------------------------------
-router.get('/instructors', auth, async (req, res) => {
+router.get("/instructors", auth, async (req, res) => {
   try {
     // 1. Find all users where the role is 'INSTRUCTOR'
-    const instructors = await User.find({ role: 'INSTRUCTOR' })
+    const instructors = await User.find({ role: "INSTRUCTOR" })
       // 2. Select only the fields the student needs to see
-      .select('name status schedule email') // We include email as it's the login 'name'
+      .select("name status schedule email") // We include email as it's the login 'name'
       // 3. Sort them alphabetically by name
-      .sort({ name: 1 }); 
+      .sort({ name: 1 });
 
     res.status(200).json(instructors);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
