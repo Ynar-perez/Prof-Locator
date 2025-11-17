@@ -312,6 +312,7 @@ const InstructorStatusDashboard = () => {
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center hover:shadow-md transition-shadow"
                 >
+                  {/* Dont Change this this is the School Logo */}
                   <img
                     src={CCC_LOGO}
                     alt="CCC Logo"
@@ -329,9 +330,18 @@ const InstructorStatusDashboard = () => {
                         onClick={() => setIsProfileOpen(!isProfileOpen)}
                         className="ml-2 w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center hover:shadow-md transition-shadow"
                       >
-                        <span className="text-white font-bold text-base sm:text-lg">
-                          {user.name ? user.name[0].toUpperCase() : '?'}
-                        </span>
+                        {user.avatar ? (
+                          <img 
+                            src={`${API_URL}${user.avatar}`}
+                            alt={user.name} 
+                            className="w-full h-full object-cover" 
+                          />
+                        ) : (
+                          <span className="text-white font-bold text-base sm:text-lg">
+                            {getInitials(user.name)}
+                          </span>
+                        )}
+                        
                       </button>
                     
                     <div className="px-1">
@@ -405,10 +415,18 @@ const InstructorStatusDashboard = () => {
             </div>
 
             {/* Avatar */}
-            <div className="w-20 h-20 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-xl font-bold shadow-lg flex-shrink-0">
-              {getInitials(profile.name)}
+            {user.avatar ? (
+              <img 
+                src={`${API_URL}${user.avatar}`} 
+                alt={user.name} 
+                className="w-20 h-20 sm:w-16 sm:h-16 rounded-full object-cover" 
+              />
+            ) : (
+              <div className="w-20 h-20 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-xl font-bold shadow-lg flex-shrink-0">
+              {getInitials(user.name)}
+              </div>
+            )}
             </div>
-          </div>
         </div>
 
         {/* Schedule Grid */}

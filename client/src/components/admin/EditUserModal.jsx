@@ -1,17 +1,26 @@
 import React, { useState, useEffect } from 'react';
 
+import { Toaster, toast } from 'sonner'
+import AvatarUpload from '../shared/AvatarUpload';
+
 // We accept the user object, an onClose function, and an onSubmit function
 const EditUserModal = ({ user, onClose, onSubmit }) => {
   
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'STUDENT', // Default
-    password: '', // This will be for "New Password"
+    role: 'STUDENT',
+    password: '',
   });
-  const [error, setError] = useState('');
 
-  // 💡 This is the most important part!
+  // Separate state for avatar
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+
   // This effect runs when the 'user' prop changes (i.e., when the modal opens)
   useEffect(() => {
     if (user) {
@@ -20,9 +29,11 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
         name: user.name || '',
         email: user.email || '',
         role: user.role || 'STUDENT',
-        password: '', // We always leave password blank
+        password: '', 
       });
-      setError(''); // Clear any old errors
+      // Set existing avatar if available
+      setAvatarPreview(user.avatar || null);
+      setError('');
     }
   }, [user]); // Dependency array: re-run when 'user' changes
 
@@ -31,40 +42,82 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
   const onChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  // Handle avatar selection
+  const handleAvatarSelect = (file, preview) => {
+    setAvatarFile(file);
+    setAvatarPreview(preview);
+  };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
     // 1. Create the 'updates' object
-    const updates = { name, email, role };
+    // const updates = { name, email, role };
 
-    // 2. ONLY add the password if the user typed one in
-    if (password) {
-      if (password.length < 5) {
-        setError('New password must be at least 5 characters long.');
-        return;
-      }
-      updates.password = password;
-    }
+    // // 2. ONLY add the password if the user typed one in
+    // if (password) {
+    //   if (password.length < 5) {
+    //     setError('New password must be at least 5 characters long.');
+    //     return;
+    //   }
+    //   updates.password = password;
+    // }
 
     try {
-      // 3. Call the parent's submit function with the user's ID and the updates
-      await onSubmit(user._id, updates);
+      // Create FormData for multipart/form-data
+      const submitData = new FormData();
+      submitData.append('name', name);
+      submitData.append('email', email);
+      submitData.append('role', role);
+
+      if (password) {
+        if (password.length < 5) {
+          setError('New password must be at least 5 characters long.');
+          setIsSubmitting(false); // Stop submission
+          return;
+        }
+        submitData.append('password', password);
+      }
       
-      // The parent component will be responsible for closing the modal
-      // by setting its own state.
+      // Only append avatar if a new one was selected
+      if (avatarFile) {
+        submitData.append('avatar', avatarFile);
+      }
+
+      await onSubmit(user._id, submitData);
+      toast.success('User updated successfully.');
+      onClose();
     } catch (err) {
-      // The parent's submit function might throw an error (e.g., email taken)
       setError(err.message || 'Failed to update user.');
+      toast.error(err.message || 'Failed to update user.');
+    } finally {
+      setIsSubmitting(false);
     }
+
+    // try {
+    //   // 3. Call the parent's submit function with the user's ID and the updates
+    //   await onSubmit(user._id, updates);
+      
+    //   // The parent component will be responsible for closing the modal
+    //   // by setting its own state.
+    // } catch (err) {
+    //   setError(err.message || 'Failed to update user.');
+    //   toast.error(err.message || 'Failed to update user.');
+    // } finally {
+    //   setIsSubmitting(false);
+    // }
+
+
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/70">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200">
           <h3 className="text-xl font-bold text-gray-800">Edit User: {user.name}</h3>
         </div>
         
@@ -75,6 +128,15 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
                 {error}
               </div>
             )}
+
+            {/* Avatar Upload */}
+            <div className="flex justify-center">
+              <AvatarUpload
+                currentAvatar={avatarPreview}
+                onImageSelect={handleAvatarSelect}
+                size="lg"
+              />
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
@@ -131,15 +193,17 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
             <button
               type="button"
               onClick={onClose}
+              disabled={isSubmitting}
               className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
             >
               Cancel
             </button>
             <button 
               type="submit" 
+              disabled={isSubmitting}
               className="flex-1 px-4 py-2 bg-gradient-to-br from-blue-600 to-violet-600 text-white rounded-lg hover:from-blue-700 hover:to-violet-700 transition"
             >
-              Save Changes
+              {isSubmitting ? 'Updating...' : 'Update User'}
             </button>
           </div>
         </form>

@@ -42,8 +42,9 @@ const userSchema = new Schema({
     trim: true
   },
   name: {
-    type: String, 
-    required: true
+    type: String,
+    required: true,
+    trim: true
   },
   password: {
     type: String,
@@ -55,6 +56,10 @@ const userSchema = new Schema({
     required: true,
     enum: ['STUDENT', 'INSTRUCTOR', 'ADMIN'],
     default: 'STUDENT'
+  },
+  avatar: {
+    type: String,
+    default: null // Path to avatar image
   },
 
   // --- Fields for INSTRUCTOR Only ---

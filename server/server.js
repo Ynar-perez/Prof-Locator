@@ -2,7 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const cors = require('cors'); // 💡 1. Import cors
+const cors = require('cors');
+const path = require('path');
 
 // --- Route file Imports ---
 const userRoutes = require('./routes/userRoutes'); 
@@ -12,7 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(express.json()); 
-app.use(cors()); // 💡 2. Use cors (This allows all cross-origin requests)
+app.use(cors());
 
 // --- Database Connection ---
 mongoose.connect(process.env.MONGO_URI)
@@ -30,9 +31,12 @@ mongoose.connect(process.env.MONGO_URI)
 // --- End of Database Connection ---
 
 
-// --- 💡 ROUTES ---
+// --- ROUTES ---
 app.use('/api/users', userRoutes);
 app.use('/api/instructor', instructorRoutes);
+
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // A simple test route
 app.get('/', (req, res) => {

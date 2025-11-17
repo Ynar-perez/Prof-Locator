@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
     name: null,
     email: null,
     role: null,
+    avatar: null,
     isAuthenticated: false,
   });
 
@@ -28,6 +29,7 @@ export const AuthProvider = ({ children }) => {
             name: decoded.user.name,
             email: decoded.user.email,
             role: decoded.user.role,
+            avatar: decoded.user.avatar,
             isAuthenticated: true,
           });
         }
@@ -48,6 +50,7 @@ export const AuthProvider = ({ children }) => {
         name: decoded.user.name,
         email: decoded.user.email,
         role: decoded.user.role,
+        avatar: decoded.user.avatar,
         isAuthenticated: true,
       });
     } catch (err) {
@@ -58,7 +61,7 @@ export const AuthProvider = ({ children }) => {
   // Function to log the user out
   const logout = () => {
     localStorage.removeItem('token');
-    setUser({ token: null, name: null, email: null, role: null, isAuthenticated: false });
+    setUser({ token: null, name: null, email: null, role: null,avatar: null, isAuthenticated: false});
   };
 
   const contextValue = {

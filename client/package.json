@@ -19,6 +19,7 @@
     "clsx": "^2.1.1",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.553.0",
+    "multer": "^2.0.2",
     "next-themes": "^0.4.6",
     "react": "^19.2.0",
     "react-chartjs-2": "^5.3.1",

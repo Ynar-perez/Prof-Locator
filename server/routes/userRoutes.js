@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
+const upload = require('../middleware/upload');
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const fs = require("fs");
 
 const { auth, isAdmin } = require("../middleware/authMiddleware");
 
@@ -84,21 +86,27 @@ router.get("/", [auth, isAdmin], async (req, res) => {
 // 💡 @route   POST /api/users/register (CREATE - Admin Only)
 // 💡 @access  Private (Admin)
 // -----------------------------------------------------------------
+
+
 // We are adding the security check here: [auth, isAdmin]
-router.post("/register", [auth, isAdmin], async (req, res) => {
+router.post("/register", upload.single('avatar'), [auth, isAdmin], async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ msg: "User already exists" });
+      error: 'User already exists'
     }
     user = new User({ name, email, password, role: role || "STUDENT" });
+
+    if (req.file) {
+      user.avatar = `/uploads/avatars/${req.file.filename}`;
+    }
+    
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
     await user.save();
 
-    // Since this is an Admin creating the user, we don't usually return a token,
-    // but the newly created user (excluding password).
     res.status(201).json({
       msg: "User created successfully",
       user: {
@@ -106,11 +114,15 @@ router.post("/register", [auth, isAdmin], async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        avatar: user.avatar
       },
     });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server Error");
+    console.error('Error creating user:', err);
+    res.status(500).json({
+      success: false,
+      message: err.message || 'Failed to create user'
+    });
   }
 });
 
@@ -149,6 +161,7 @@ router.post("/login", async (req, res) => {
         role: user.role,
         name: user.name,
         email: user.email,
+        avatar: user.avatar
       },
     };
 
@@ -181,7 +194,7 @@ router.get("/me", auth, async (req, res) => {
 // 💡 @route   PUT /api/users/:id (UPDATE - Admin Only)
 // 💡 @access  Private (Admin)
 // -----------------------------------------------------------------
-router.put("/:id", [auth, isAdmin], async (req, res) => {
+router.put("/:id", [auth, isAdmin], upload.single('avatar'), async (req, res) => {
   try {
     const userId = req.params.id;
     const updates = req.body;
@@ -192,25 +205,54 @@ router.put("/:id", [auth, isAdmin], async (req, res) => {
       updates.password = await bcrypt.hash(updates.password, salt);
     }
 
+    if (req.file) {
+      updates.avatar = `/uploads/avatars/${req.file.filename}`;
+      
+      // Delete old avatar file here
+      const oldUser = await User.findById(req.params.id);
+      if (oldUser.avatar) {
+        // error handling in case the file doesn't exist
+        fs.unlink(path.join(__dirname, '..', oldUser.avatar), (err) => {
+            if (err) console.error("Error deleting old avatar:", err.message);
+        });
+      }
+    }
+
     // Find the user by ID and update the fields provided in the body
     const user = await User.findByIdAndUpdate(
       userId,
-      { $set: updates }, // $set updates only the fields provided
-      { new: true, runValidators: true } // 'new: true' returns the updated document
-    ).select("-password"); // Exclude the password from the response
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select("-password");
 
     if (!user) {
-      return res.status(404).json({ msg: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
     }
 
-    res.status(200).json({ msg: "User updated successfully", user });
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar
+      }
+    });
   } catch (err) {
     console.error(err.message);
-    // This catches errors like invalid MongoDB ObjectId format
     if (err.kind === "ObjectId") {
       return res.status(404).json({ msg: "Invalid user ID format" });
     }
-    res.status(500).send("Server Error");
+    console.error('Error updating user:', err);
+    res.status(500).json({
+      success: false,
+      message: err.message || 'Failed to update user'
+    });
   }
 });
 

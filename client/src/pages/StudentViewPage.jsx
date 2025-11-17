@@ -393,14 +393,21 @@ const StudentDashboard = () => {
                     onMouseLeave={() => setIsProfileOpen(false)}
                   >
                     <div className="flex flex-row gap-1 py-1">
-                    <button
-                      onClick={() => setIsProfileOpen(!isProfileOpen)}
-                      className="ml-2 w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center hover:shadow-md transition-shadow"
-                    >
-                      <span className="text-white font-bold text-base sm:text-lg">
-                        {user.name ? user.name[0].toUpperCase() : '?'}
-                      </span>
-                    </button>
+                      <div
+                        className="ml-2 w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center hover:shadow-md transition-shadow"
+                      >
+                        {user.avatar ? (
+                            <img 
+                              src={`${API_URL}${user.avatar}`}
+                              alt={user.name} 
+                              className="w-auto h-auto object-cover rounded-lg" 
+                            />
+                          ) : (
+                            <span className="text-white font-bold text-base sm:text-lg">
+                              {getInitials(user.name)}
+                            </span>
+                          )}
+                      </div>
                     <div className="px-1">
                       <p className="text-sm font-medium text-gray-900">{user.name || 'Student'}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{user.email || 'No email'}</p>

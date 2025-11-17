@@ -419,7 +419,7 @@ const AdminDashboard = () => {
                     placeholder="Search users..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                   />
                 </div>
               </div>
@@ -447,9 +447,17 @@ const AdminDashboard = () => {
                         <tr key={user._id} className="hover:bg-gray-50 transition">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
-                                {user.name.charAt(0)}
-                              </span>
+                              {user.avatar ? (
+                                <img 
+                                  src={`${API_URL}${user.avatar}`} 
+                                  alt={user.name} 
+                                  className="w-10 h-10 rounded-full object-cover" 
+                                />
+                              ) : (
+                                <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
+                                  {user.name.charAt(0)}
+                                </span>
+                              )}
                               <div>
                                 <p className="font-medium text-gray-900">{user.name}</p>
                                 <p className="text-sm text-gray-500">{user.email}</p>
@@ -506,9 +514,17 @@ const AdminDashboard = () => {
                     <div key={user._id} className="bg-gray-50 rounded-lg p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
-                            {user.name.charAt(0)}
-                          </span>
+                          {user.avatar ? (
+                            <img 
+                              src={`${API_URL}${user.avatar}`} 
+                              alt={user.name} 
+                              className="w-10 h-10 rounded-full object-cover" 
+                            />
+                          ) : (
+                            <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
+                              {user.name.charAt(0)}
+                            </span>
+                          )}
                           <div>
                             <p className="font-medium text-gray-900">{user.name}</p>
                             <p className="text-sm text-gray-500">{user.email}</p>
