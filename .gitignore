@@ -5,3 +5,5 @@ node_modules
 
 # This ignores your secret .env file
 .env
+
+README.md

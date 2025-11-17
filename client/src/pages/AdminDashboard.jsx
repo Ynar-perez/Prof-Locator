@@ -10,6 +10,7 @@ import {
   Calendar, UserCheck, UserX, Bell, Settings
 } from 'lucide-react';
 
+import CCC_LOGO from '../assets/CCC-Logo.png'
 import ProfLocatorLogo from '../assets/ProfLocator-Circle.png'
 
 import ConfirmationDialog from '../components/shared/ConfirmationDialog';
@@ -19,6 +20,7 @@ import StatsCard from '../components/admin/StatsCard';
 import ScheduleModal from '../components/admin/ScheduleModal';
 import AddUserModal from '../components/admin/AddUserModal';
 import EditUserModal from '../components/admin/EditUserModal';
+import BarChart from '../components/admin/BarChart';
 
 
 const AdminDashboard = () => {
@@ -330,13 +332,14 @@ const AdminDashboard = () => {
             
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <img 
-                  src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100" 
-                  alt="Admin"
-                  className="w-8 h-8 rounded-full"
-                />
+                <img
+                  src={CCC_LOGO}
+                  alt="CCC Logo"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center hover:shadow-md transition-shadow"
+                  >
+                </img>
                 <span className="hidden md:block lg:block text-sm font-medium">{user?.name || 'Admin'}</span>
-              </div>
+              </div>  
             </div>
           </div>
         </header>
@@ -360,13 +363,11 @@ const AdminDashboard = () => {
               ))}
             </div>
 
-              {/* Graph Placeholder */}
-              <div className="bg-white rounded-xl shadow-md p-6">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Activity Graph</h2>
-                <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <p className="text-gray-500">Graph placeholder (Chart.js will go here)</p>
-                </div>
-              </div>
+              {/* Graph */}
+              <BarChart 
+                instructorCount={instructorCount} 
+                studentCount={studentCount} 
+              />
             </div>
           )}
         

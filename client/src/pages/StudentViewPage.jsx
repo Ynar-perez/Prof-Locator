@@ -4,6 +4,8 @@ import API_URL from '../apiConfig';
 import { Search, MapPin, Clock,ChevronLeft,ChevronRight, DoorOpen, Building, LogOut, ChevronDown, Filter, X, Calendar, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+import CCC_LOGO from '../assets/CCC-Logo.png'
+
 // Helper function to get initials
 const getInitials = (name) => {
   if (!name) return '?';
@@ -372,13 +374,16 @@ const StudentDashboard = () => {
             {/* Left Side: Profile */}
             <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
               <div className="relative flex-shrink-0">
+
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center hover:shadow-md transition-shadow"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center hover:shadow-md transition-shadow overflow-hidden"
                 >
-                  <span className="text-white font-bold text-base sm:text-lg">
-                    {user.name ? user.name[0].toUpperCase() : '?'}
-                  </span>
+                  <img
+                    src={CCC_LOGO}
+                    alt="CCC Logo"
+                    className="w-full h-full object-cover" 
+                  />
                 </button>
                 
                 {/* Profile Dropdown */}
@@ -387,10 +392,21 @@ const StudentDashboard = () => {
                     className="absolute left-0 mt-2 w-64 bg-white rounded shadow-xl py-1 z-50 ring ring-black ring-opacity-5"
                     onMouseLeave={() => setIsProfileOpen(false)}
                   >
-                    <div className="px-4 py-3">
+                    <div className="flex flex-row gap-1 py-1">
+                    <button
+                      onClick={() => setIsProfileOpen(!isProfileOpen)}
+                      className="ml-2 w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center hover:shadow-md transition-shadow"
+                    >
+                      <span className="text-white font-bold text-base sm:text-lg">
+                        {user.name ? user.name[0].toUpperCase() : '?'}
+                      </span>
+                    </button>
+                    <div className="px-1">
                       <p className="text-sm font-medium text-gray-900">{user.name || 'Student'}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{user.email || 'No email'}</p>
                     </div>
+                    </div>
+
                     <div className="border-t border-gray-100"></div>
                     <button
                       onClick={() => {
@@ -402,17 +418,21 @@ const StudentDashboard = () => {
                       <LogOut className="w-4 h-4 mr-2" />
                       Log Out
                     </button>
+                    
                   </div>
                 )}
               </div>
               
               <div className="min-w-0">
-                <h1 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                  {user.name || 'Student'}
+                <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                  ProfLocator
                 </h1>
+                
                 <p className="text-xs text-gray-500 hidden sm:block">Student Portal</p>
               </div>
             </div>
+            
+            
 
             {/* Right Side: Filter Button (Mobile) */}
             <button
