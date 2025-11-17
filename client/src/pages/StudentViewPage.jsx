@@ -38,7 +38,11 @@ const getStatusStyle = (status) => {
 // Instructor Card Component
 const InstructorCard = ({ instructor, onClick }) => {
   const currentStatus = instructor.currentStatus || {};
-  const statusStyle = getStatusStyle(instructor.instructorStatus || instructor.status || 'Available');
+  // 1. Get the correct status TEXT from the 'currentStatus' object
+  const statusText = currentStatus.status || 'Unavailable';
+  
+  // 2. Get the style based on that correct status text
+  const statusStyle = getStatusStyle(statusText);
   
   return (
     <div
@@ -49,9 +53,17 @@ const InstructorCard = ({ instructor, onClick }) => {
         {/* Header with Avatar and Status */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-3 min-w-0 flex-1">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
-              {getInitials(instructor.name)}
-            </div>
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0 overflow-hidden ${!instructor.avatar ? 'bg-gradient-to-br from-blue-400 to-purple-500' : ''}`}>
+            {instructor.avatar ? (
+              <img 
+                src={`${API_URL}${instructor.avatar}`} 
+                alt={instructor.name} 
+                className="w-full h-full object-cover" 
+              />
+            ) : (
+              getInitials(instructor.name)
+            )}
+          </div>
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
                 {instructor.name}
@@ -70,7 +82,7 @@ const InstructorCard = ({ instructor, onClick }) => {
             </span> */}
             {/* this is the correct status display but wrong color */}
             <span className={`text-xs font-medium ${statusStyle.textColor}`}>
-              {instructor.instructorStatus || instructor.status || 'Unavailable'}
+              {statusText}
             </span>
             
           </div>
@@ -127,7 +139,11 @@ const ScheduleModal = ({ instructor, onClose, currentStatus }) => {
     .filter(item => item.day === selectedDay)
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  const statusStyle = getStatusStyle(instructor.instructorStatus || instructor.status || 'Available');
+  // 1. Get the correct status TEXT from the 'currentStatus' prop
+  const statusText = currentStatus.status || 'Unavailable';
+
+  // 2. Get the style based on that correct text
+  const statusStyle = getStatusStyle(statusText);
 
   // Scroll functions for day tabs
   const scrollDays = (direction) => {
@@ -172,7 +188,7 @@ const ScheduleModal = ({ instructor, onClose, currentStatus }) => {
                     <div className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full ${statusStyle.bgColor} border ${statusStyle.border}`}>
                       <div className={`w-2 h-2 rounded-full ${statusStyle.color} animate-pulse`}></div>
                       <span className={`text-xs font-medium ${statusStyle.textColor}`}>
-                        {instructor.instructorStatus || instructor.status || 'Available'}
+                        {statusText}
                       </span>
                     </div>
                   </div>
