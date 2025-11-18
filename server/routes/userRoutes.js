@@ -14,44 +14,52 @@ const { getTodaysDay, getCurrentTime, getManilaDate } = require("../utils/dateHe
 // -----------------------------------------------------------------
 
 const calculateCurrentStatus = (instructor) => {
-  // Use the global server time for expiration checks (Database stores dates in UTC)
-  // But use Manila Time for logical checks
   const nowUTC = new Date(); 
+  const today = getTodaysDay();   
+  const currentTime = getCurrentTime(); 
 
-  // 1. Check for an active override
-  if (instructor.statusOverrideExpires && instructor.statusOverrideExpires > nowUTC) {
-    return {
-      status: instructor.instructorStatus,
-      location: instructor.location,
-      room: instructor.room,
-      overrideExpires: instructor.statusOverrideExpires,
-    };
-  }
-
-  // 2. No override. Check the base schedule.
-  const today = getTodaysDay();   // Returns "Tuesday" (based on Manila)
-  const currentTime = getCurrentTime(); // Returns "20:00" (based on Manila)
-
+  // 1. First, ALWAYS check if there is a class scheduled right now
   const currentScheduleItem = instructor.baseSchedule.find(item => {
     return item.day === today && 
            item.startTime <= currentTime && 
            item.endTime > currentTime;
   });
 
+  // 2. Determine the best Location/Room to display
+  // Priority: Schedule Location -> Instructor Static Profile Location -> null
+  let displayLocation = instructor.location;
+  let displayRoom = instructor.room;
+
+  if (currentScheduleItem) {
+    displayLocation = currentScheduleItem.location;
+    displayRoom = currentScheduleItem.room;
+  }
+
+  // 3. NOW check for an active Override
+  if (instructor.statusOverrideExpires && instructor.statusOverrideExpires > nowUTC) {
+    return {
+      status: instructor.instructorStatus, // Use the Override Status (e.g., "In Meeting")
+      location: displayLocation,           // But keep the Schedule Location (if in class)
+      room: displayRoom,                   
+      overrideExpires: instructor.statusOverrideExpires,
+    };
+  }
+
+  // 4. No override? Use the Schedule Status
   if (currentScheduleItem) {
     return {
-      status: currentScheduleItem.status,
-      location: currentScheduleItem.location,
-      room: currentScheduleItem.room,
+      status: currentScheduleItem.status || "In Class",
+      location: displayLocation,
+      room: displayRoom,
       overrideExpires: null,
     };
   }
 
-  // 3. Default
+  // 5. Default (Free/Available)
   return {
     status: "Available",
-    location: instructor.location,
-    room: instructor.room,
+    location: displayLocation,
+    room: displayRoom,
     overrideExpires: null,
   };
 };
@@ -285,7 +293,8 @@ router.get("/instructors", auth, async (req, res) => {
     // 1. Find all users where the role is 'INSTRUCTOR'
     const instructors = await User.find({ role: "INSTRUCTOR" })
       // 2. Select only the fields the student needs to see
-      .select("name email instructorStatus baseSchedule location room avatar")
+      // !!! ADD 'statusOverrideExpires' HERE !!!
+      .select("name email instructorStatus baseSchedule location room avatar statusOverrideExpires")
       // 3. Sort them alphabetically by name
       .sort({ name: 1 });
 

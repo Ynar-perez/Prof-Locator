@@ -174,10 +174,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const updateSchedule = async (userId, schedule) => {
-    return axios.put(`${API_URL}/api/users/${userId}/schedule`, schedule, getAuthHeaders());
-  };
-
   // !! --- FILTERED USERS ---
   const filteredUsers = allUsers.filter(u => 
     (activeTab === 'instructors' ? u.role === 'INSTRUCTOR' : u.role === 'STUDENT') &&

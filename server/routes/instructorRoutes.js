@@ -18,7 +18,6 @@ const calculateCurrentStatus = (instructor) => {
   }
 
   // 2. No override. Check the base schedule.
-  // USE THE NEW HELPERS
   const today = getTodaysDay(); 
   const currentTime = getCurrentTime();
 
@@ -27,6 +26,24 @@ const calculateCurrentStatus = (instructor) => {
            item.startTime <= currentTime && 
            item.endTime > currentTime;
   });
+  
+  // 3. If a class is found, return that status
+  if (currentScheduleItem) {
+    return {
+      status: currentScheduleItem.status || "In Class", // Default to "In Class" if status is missing
+      location: currentScheduleItem.location,
+      room: currentScheduleItem.room,
+      overrideExpires: null,
+    };
+  }
+
+  // 4. Default: User is Available
+  return {
+    status: "Available",
+    location: instructor.location,
+    room: instructor.room,
+    overrideExpires: null,
+  };
 };
 
 // -----------------------------------------------------------------

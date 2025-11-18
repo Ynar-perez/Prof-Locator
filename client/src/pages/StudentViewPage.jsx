@@ -343,12 +343,13 @@ const StudentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch instructors from backend
+  // Fetch instructors from backend with Auto-Refresh
   useEffect(() => {
     const fetchInstructors = async () => {
       try {
-        setLoading(true);
-        setError(null);
+        // Only set loading true on the very first load, 
+        // so the screen doesn't flash while polling
+        if (instructors.length === 0) setLoading(true);
         
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/api/users/instructors`, {
@@ -359,18 +360,30 @@ const StudentDashboard = () => {
         });
 
         setInstructors(response.data);
+        setError(null);
       } catch (err) {
         console.error('Error fetching instructors:', err);
-        setError(err.message);
+        // Don't show error on screen if it's just a polling error
+        if (instructors.length === 0) setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
+    let intervalId;
+
     if (user.isAuthenticated) {
-      fetchInstructors();
+      fetchInstructors(); // 1. Fetch immediately
+      
+      // 2. Set up a timer to fetch again every 1 minute
+      intervalId = setInterval(fetchInstructors, 60000);
     }
-  }, [user.isAuthenticated]);
+
+    // 3. Cleanup function to stop the timer when user leaves the page
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [user.isAuthenticated]); // Removing 'instructors.length' dependency to prevent loops
 
   // Filter instructors based on search and status
   const filteredInstructors = instructors.filter(instructor => {

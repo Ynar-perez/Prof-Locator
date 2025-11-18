@@ -54,7 +54,7 @@ const ScheduleItem = ({ item }) => (
     </div>
     <div className="border-l-2 border-blue-200 pl-3 flex-1 min-w-0">
       <div className="flex flex-row align-middle items-center gap-1">
-        <p className="font-semibold text-gray-800 truncate mb-2">Subject Name</p>
+        <p className="font-semibold text-gray-800 truncate mb-2">No Subject</p>
         <span className='px-2 py-1 bg-blue-600/90 rounded-full font-semibold text-white mb-2 text-xs'>{item.status || 'No Status'}</span>
       </div>
       <div className="space-y-1.5">
@@ -302,8 +302,13 @@ const InstructorStatusDashboard = () => {
     );
   }
 
-  const { profile, currentState } = dashboardData;
-  const currentStyle = statusOptions.find(s => s.value === currentState.status) || statusOptions[0];
+  const profile = dashboardData.profile || {};
+  const currentState = dashboardData.currentState || {}; 
+  
+  // specific check to ensure we have a string to compare
+  const statusValue = currentState.status || 'Unavailable'; 
+  const currentStyle = statusOptions.find(s => s.value === statusValue) || statusOptions[0];
+  
   const currentScheduleItem = getCurrentScheduleItem(dashboardData.fullSchedule);
 
   return (
