@@ -6,15 +6,24 @@ import { useAuth } from '../context/AuthContext';
 
 import CCC_LOGO from '../assets/CCC-Logo.png'
 
+// Helper to get PH Time Object
+const getManilaDate = () => {
+  const now = new Date();
+  const manilaTime = now.toLocaleString("en-US", { timeZone: "Asia/Manila" });
+  return new Date(manilaTime);
+};
+
 // Helper function to get the current day of the week
 const getTodaysDay = () => {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  return days[new Date().getDay()];
+  // Use getManilaDate() instead of new Date()
+  return days[getManilaDate().getDay()];
 };
 
 // Helper function to get current schedule item based on time
 const getCurrentScheduleItem = (schedule = []) => {
-  const now = new Date();
+  // Use getManilaDate() here too
+  const now = getManilaDate();
   const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   const todayName = getTodaysDay();
   

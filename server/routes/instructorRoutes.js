@@ -2,35 +2,24 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/User"); // We still use the User model
 const { auth, isInstructor } = require("../middleware/authMiddleware");
-
-const getTodaysDay = () => {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  return days[new Date().getDay()];
-};
-
-const getCurrentTime = () => {
-  const now = new Date();
-  const hours = now.getHours().toString().padStart(2, '0');
-  const minutes = now.getMinutes().toString().padStart(2, '0');
-  return `${hours}:${minutes}`;
-};
+const { getTodaysDay, getCurrentTime } = require("../utils/dateHelpers");
 
 const calculateCurrentStatus = (instructor) => {
-  const now = new Date();
+  const nowUTC = new Date(); // Keep standard for DB comparison
 
   // 1. Check for an active override
-  // Does an override exist AND is it in the future?
-  if (instructor.statusOverrideExpires && instructor.statusOverrideExpires > now) {
+  if (instructor.statusOverrideExpires && instructor.statusOverrideExpires > nowUTC) {
     return {
-      status: instructor.instructorStatus, // This is the override status
-      location: instructor.location, // Use the user's base location
-      room: instructor.room,         // Use the user's base room
+      status: instructor.instructorStatus,
+      location: instructor.location,
+      room: instructor.room,
       overrideExpires: instructor.statusOverrideExpires,
     };
   }
 
   // 2. No override. Check the base schedule.
-  const today = getTodaysDay();
+  // USE THE NEW HELPERS
+  const today = getTodaysDay(); 
   const currentTime = getCurrentTime();
 
   const currentScheduleItem = instructor.baseSchedule.find(item => {
@@ -38,25 +27,6 @@ const calculateCurrentStatus = (instructor) => {
            item.startTime <= currentTime && 
            item.endTime > currentTime;
   });
-
-  if (currentScheduleItem) {
-    // Found a matching item in the schedule
-    return {
-      status: currentScheduleItem.status,
-      location: currentScheduleItem.location,
-      room: currentScheduleItem.room,
-      overrideExpires: null,
-    };
-  }
-
-  // 3. No override and not in a scheduled class.
-  // Return a sensible default (e.g., "Available" at their main office)
-  return {
-    status: "Available", // Default status
-    location: instructor.location, // Default location
-    room: instructor.room,         // Default room
-    overrideExpires: null,
-  };
 };
 
 // -----------------------------------------------------------------

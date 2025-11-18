@@ -7,39 +7,30 @@ const jwt = require("jsonwebtoken");
 const fs = require("fs");
 
 const { auth, isAdmin } = require("../middleware/authMiddleware");
+const { getTodaysDay, getCurrentTime, getManilaDate } = require("../utils/dateHelpers");
 
 // -----------------------------------------------------------------
 // Helper functions to calculate current instructor status/location
 // -----------------------------------------------------------------
-const getTodaysDay = () => {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  return days[new Date().getDay()];
-};
-
-const getCurrentTime = () => {
-  const now = new Date();
-  const hours = now.getHours().toString().padStart(2, '0');
-  const minutes = now.getMinutes().toString().padStart(2, '0');
-  return `${hours}:${minutes}`;
-};
 
 const calculateCurrentStatus = (instructor) => {
-  const now = new Date();
+  // Use the global server time for expiration checks (Database stores dates in UTC)
+  // But use Manila Time for logical checks
+  const nowUTC = new Date(); 
 
   // 1. Check for an active override
-  // Does an override exist AND is it in the future?
-  if (instructor.statusOverrideExpires && instructor.statusOverrideExpires > now) {
+  if (instructor.statusOverrideExpires && instructor.statusOverrideExpires > nowUTC) {
     return {
-      status: instructor.instructorStatus, // This is the override status
-      location: instructor.location, // Use the user's base location
-      room: instructor.room,         // Use the user's base room
+      status: instructor.instructorStatus,
+      location: instructor.location,
+      room: instructor.room,
       overrideExpires: instructor.statusOverrideExpires,
     };
   }
 
   // 2. No override. Check the base schedule.
-  const today = getTodaysDay();
-  const currentTime = getCurrentTime();
+  const today = getTodaysDay();   // Returns "Tuesday" (based on Manila)
+  const currentTime = getCurrentTime(); // Returns "20:00" (based on Manila)
 
   const currentScheduleItem = instructor.baseSchedule.find(item => {
     return item.day === today && 
@@ -48,7 +39,6 @@ const calculateCurrentStatus = (instructor) => {
   });
 
   if (currentScheduleItem) {
-    // Found a matching item in the schedule
     return {
       status: currentScheduleItem.status,
       location: currentScheduleItem.location,
@@ -57,12 +47,11 @@ const calculateCurrentStatus = (instructor) => {
     };
   }
 
-  // 3. No override and not in a scheduled class.
-  // Return a sensible default (e.g., "Available" at their main office)
+  // 3. Default
   return {
-    status: "Available", // Default status
-    location: instructor.location, // Default location
-    room: instructor.room,         // Default room
+    status: "Available",
+    location: instructor.location,
+    room: instructor.room,
     overrideExpires: null,
   };
 };
