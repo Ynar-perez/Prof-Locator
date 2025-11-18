@@ -76,11 +76,6 @@ const InstructorCard = ({ instructor, onClick }) => {
           <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full ${statusStyle.bgColor} border ${statusStyle.border} flex-shrink-0 ml-2`}>
             <div className={`w-2 h-2 rounded-full ${statusStyle.color} animate-pulse`}></div>
 
-            {/* !! TODO the color is wrong and this commented out is displaying the wrong one */}
-            {/* <span className={`text-xs font-medium ${statusStyle.textColor} whitespace-nowrap`}>
-              {currentStatus.status || 'Available'}
-            </span> */}
-            {/* this is the correct status display but wrong color */}
             <span className={`text-xs font-medium ${statusStyle.textColor}`}>
               {statusText}
             </span>
@@ -174,8 +169,16 @@ const ScheduleModal = ({ instructor, onClose, currentStatus }) => {
           <div className="p-4 sm:p-6 border-b border-gray-200">
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-3 min-w-0 flex-1">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-                  {getInitials(instructor.name)}
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0 overflow-hidden ${!instructor.avatar ? 'bg-gradient-to-br from-blue-400 to-purple-500' : ''}`}>
+                  {instructor.avatar ? (
+                    <img 
+                      src={`${API_URL}${instructor.avatar}`} 
+                      alt={instructor.name} 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    getInitials(instructor.name)
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
@@ -373,8 +376,13 @@ const StudentDashboard = () => {
   const filteredInstructors = instructors.filter(instructor => {
     const matchesSearch = instructor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          instructor.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const currentStatus = instructor.instructorStatus || instructor.status || 'Available';
-    const matchesStatus = statusFilter === 'All' || currentStatus === statusFilter;
+    
+    // UPDATED: Access the nested currentStatus object to match the UI Card
+    const statusObj = instructor.currentStatus || {};
+    // Default to 'Unavailable' if missing, to match InstructorCard logic
+    const displayStatus = statusObj.status || 'Unavailable'; 
+    
+    const matchesStatus = statusFilter === 'All' || displayStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
 

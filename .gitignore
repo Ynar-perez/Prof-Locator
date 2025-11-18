@@ -7,3 +7,9 @@ node_modules
 .env
 
 README.md
+
+# Ignore everything in the avatars folder...
+server/uploads/avatars/*
+
+# ...EXCEPT the .gitkeep file (so the folder structure stays)
+!server/uploads/avatars/.gitkeep
