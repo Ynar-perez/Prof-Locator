@@ -1,5 +1,4 @@
-import React from 'react';
-
+import React from "react";
 
 const StatsCard = ({ title, value, color, icon: Icon }) => {
   return (

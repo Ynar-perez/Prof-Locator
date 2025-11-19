@@ -1,26 +1,40 @@
 import React from "react";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
-import { Doughnut } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+} from "chart.js";
+import { Doughnut } from "react-chartjs-2";
 
 // Register Chart.js components (do this once at the top)
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title
+);
 
 const BarChart = ({ instructorCount, studentCount }) => {
   // Chart data
   const userData = {
-    labels: ['Instructors', 'Students'],
+    labels: ["Instructors", "Students"],
     datasets: [
       {
-        label: 'User Distribution',
+        label: "User Distribution",
         data: [instructorCount, studentCount],
         backgroundColor: [
-          'rgba(59, 130, 246, 0.8)', // Blue for instructors
-          'rgba(16, 185, 129, 0.8)', // Green for students
+          "rgba(59, 130, 246, 0.8)", // Blue for instructors
+          "rgba(16, 185, 129, 0.8)", // Green for students
         ],
-        borderColor: [
-          'rgba(59, 130, 246, 1)',
-          'rgba(16, 185, 129, 1)',
-        ],
+        borderColor: ["rgba(59, 130, 246, 1)", "rgba(16, 185, 129, 1)"],
         borderWidth: 2,
       },
     ],
@@ -31,7 +45,7 @@ const BarChart = ({ instructorCount, studentCount }) => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'bottom',
+        position: "bottom",
         labels: {
           padding: 20,
           font: {
@@ -41,8 +55,8 @@ const BarChart = ({ instructorCount, studentCount }) => {
       },
       tooltip: {
         callbacks: {
-          label: function(context) {
-            const label = context.label || '';
+          label: function (context) {
+            const label = context.label || "";
             const value = context.parsed || 0;
             const total = instructorCount + studentCount;
             const percentage = ((value / total) * 100).toFixed(1);

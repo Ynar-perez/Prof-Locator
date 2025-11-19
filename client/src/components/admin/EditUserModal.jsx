@@ -1,39 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
-import { Toaster, toast } from 'sonner'
-import AvatarUpload from '../shared/AvatarUpload';
+import { Toaster, toast } from "sonner";
+import AvatarUpload from "../shared/AvatarUpload";
 
 // We accept the user object, an onClose function, and an onSubmit function
 const EditUserModal = ({ user, onClose, onSubmit }) => {
-  
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    role: 'STUDENT',
-    password: '',
+    name: "",
+    email: "",
+    role: "STUDENT",
+    password: "",
   });
 
   // Separate state for avatar
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
 
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
 
   // This effect runs when the 'user' prop changes (i.e., when the modal opens)
   useEffect(() => {
     if (user) {
       // We fill the form data with the user's existing info
       setFormData({
-        name: user.name || '',
-        email: user.email || '',
-        role: user.role || 'STUDENT',
-        password: '', 
+        name: user.name || "",
+        email: user.email || "",
+        role: user.role || "STUDENT",
+        password: "",
       });
       // Set existing avatar if available
       setAvatarPreview(user.avatar || null);
-      setError('');
+      setError("");
     }
   }, [user]); // Dependency array: re-run when 'user' changes
 
@@ -48,10 +46,10 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
     setAvatarFile(file);
     setAvatarPreview(preview);
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsSubmitting(true);
 
     // 1. Create the 'updates' object
@@ -69,30 +67,30 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
     try {
       // Create FormData for multipart/form-data
       const submitData = new FormData();
-      submitData.append('name', name);
-      submitData.append('email', email);
-      submitData.append('role', role);
+      submitData.append("name", name);
+      submitData.append("email", email);
+      submitData.append("role", role);
 
       if (password) {
         if (password.length < 5) {
-          setError('New password must be at least 5 characters long.');
+          setError("New password must be at least 5 characters long.");
           setIsSubmitting(false); // Stop submission
           return;
         }
-        submitData.append('password', password);
+        submitData.append("password", password);
       }
-      
+
       // Only append avatar if a new one was selected
       if (avatarFile) {
-        submitData.append('avatar', avatarFile);
+        submitData.append("avatar", avatarFile);
       }
 
       await onSubmit(user._id, submitData);
-      toast.success('User updated successfully.');
+      toast.success("User updated successfully.");
       onClose();
     } catch (err) {
-      setError(err.message || 'Failed to update user.');
-      toast.error(err.message || 'Failed to update user.');
+      setError(err.message || "Failed to update user.");
+      toast.error(err.message || "Failed to update user.");
     } finally {
       setIsSubmitting(false);
     }
@@ -100,7 +98,7 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
     // try {
     //   // 3. Call the parent's submit function with the user's ID and the updates
     //   await onSubmit(user._id, updates);
-      
+
     //   // The parent component will be responsible for closing the modal
     //   // by setting its own state.
     // } catch (err) {
@@ -109,18 +107,17 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
     // } finally {
     //   setIsSubmitting(false);
     // }
-
-
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/70">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        
         <div className="p-4 border-b border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800">Edit User: {user.name}</h3>
+          <h3 className="text-xl font-bold text-gray-800">
+            Edit User: {user.name}
+          </h3>
         </div>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="p-6 space-y-4">
             {error && (
@@ -139,44 +136,52 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Name
+              </label>
+              <input
+                type="text"
                 name="name"
                 value={name}
                 onChange={onChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
-                required 
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input 
-                type="email" 
-                name="email"
-                value={email}
-                onChange={onChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
-                required 
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Password (Optional)</label>
-              <input 
-                type="password" 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={email}
+                onChange={onChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                New Password (Optional)
+              </label>
+              <input
+                type="password"
                 name="password"
                 value={password}
                 onChange={onChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 placeholder="Leave blank to keep same password"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-              <select 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Role
+              </label>
+              <select
                 name="role"
                 value={role}
                 onChange={onChange}
@@ -198,12 +203,12 @@ const EditUserModal = ({ user, onClose, onSubmit }) => {
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isSubmitting}
               className="flex-1 px-4 py-2 bg-gradient-to-br from-blue-600 to-violet-600 text-white rounded-lg hover:from-blue-700 hover:to-violet-700 transition"
             >
-              {isSubmitting ? 'Updating...' : 'Update User'}
+              {isSubmitting ? "Updating..." : "Update User"}
             </button>
           </div>
         </form>
