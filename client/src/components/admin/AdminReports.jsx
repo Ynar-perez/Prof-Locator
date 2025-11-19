@@ -56,13 +56,17 @@ const AdminReports = () => {
 
   const fetchInstructors = async () => {
     try {
-      
       const token = localStorage.getItem("token");
-
-      // This looks for the route on Render (where your database lives)
       const baseURL = import.meta.env.VITE_API_BASE_URL;
+      
+      // --- DEBUGGING LOG ---
+      console.log("DEBUG: Current Base URL is:", baseURL); 
+      // ---------------------
 
-      const response = await fetch(`${baseURL}/api/users/instructors`, {
+      // Safety Fallback: If baseURL is missing, force it manually
+      const targetURL = baseURL ? baseURL : "https://prof-locator.onrender.com";
+
+      const response = await fetch(`${targetURL}/api/users/instructors`, {
         headers: { "x-auth-token": token },
       });
       // // NOTE: Ensure this endpoint path matches your backend exactly
