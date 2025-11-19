@@ -56,11 +56,19 @@ const AdminReports = () => {
 
   const fetchInstructors = async () => {
     try {
+      
       const token = localStorage.getItem("token");
-      // NOTE: Ensure this endpoint path matches your backend exactly
-      const response = await fetch("/api/users/instructors", {
+
+      // This looks for the route on Render (where your database lives)
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
+
+      const response = await fetch(`${baseURL}/api/users/instructors`, {
         headers: { "x-auth-token": token },
       });
+      // // NOTE: Ensure this endpoint path matches your backend exactly
+      // const response = await fetch("/api/users/instructors", {
+      //   headers: { "x-auth-token": token },
+      // });
 
       if (!response.ok) throw new Error("Failed to fetch instructors");
 
